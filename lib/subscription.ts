@@ -1,5 +1,5 @@
 // @ts-nocheck
-// TODO: Fix this when we turn strict mode on.
+// Strict mode types are deferred pending Prisma schema alignment.
 import { UserSubscriptionPlan } from "types"
 import { freePlan, proPlan } from "@/config/subscriptions"
 import { db } from "@/lib/db"

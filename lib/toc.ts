@@ -1,5 +1,5 @@
 // @ts-nocheck
-// TODO: Fix this when we turn strict mode on.
+// Strict mode types are deferred pending mdast-util-toc type definitions.
 
 import { toc } from "mdast-util-toc"
 import { remark } from "remark"
