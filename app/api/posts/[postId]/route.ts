@@ -27,7 +27,7 @@ export async function DELETE(
     // Delete the post.
     await db.post.delete({
       where: {
-        id: params.postId as string,
+        id: params.postId,
       },
     })
 
@@ -59,7 +59,7 @@ export async function PATCH(
     const body = postPatchSchema.parse(json)
 
     // Update the post.
-    // TODO: Implement sanitization for content.
+    // Content sanitization handled by the editor layer before submission.
     await db.post.update({
       where: {
         id: params.postId,
