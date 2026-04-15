@@ -26,7 +26,7 @@ async function getGuideFromParams(params) {
   const guide = allGuides.find((guide) => guide.slugAsParams === slug)
 
   if (!guide) {
-    null
+    return null
   }
 
   return guide

@@ -24,7 +24,7 @@ async function getDocFromParams(params) {
   const doc = allDocs.find((doc) => doc.slugAsParams === slug)
 
   if (!doc) {
-    null
+    return null
   }
 
   return doc
