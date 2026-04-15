@@ -1,3 +1,66 @@
+# Taxonomy — DEVE427 Atelier 2
+
+**Cours:** DEVE427 - Développement d'applications & TMA  
+**Auteur:** Maxime Mansiet  
+**GitHub:** https://github.com/AirKyzzZ/atelier2-DEVE427  
+**Jira:** https://m4xxime.atlassian.net/jira/software/projects/KAN/boards/1
+
+---
+
+## Étape 1 — Workflow Jira personnalisé
+
+Le projet Jira "Cours TMA" (KAN) a été configuré avec un workflow personnalisé incluant une étape de validation intermédiaire.
+
+**Statuts du workflow :**
+- À faire → En cours → **En validation** → Terminé
+
+**Contraintes de transitions :** seul le responsable qualité peut valider un ticket (transition vers "Terminé" bloquée sans passer par "En validation").
+
+> **Screenshot du workflow Jira :**  
+> *(Ajouter ici une capture d'écran du workflow depuis Jira > Paramètres du projet > Workflow)*
+
+---
+
+## Étape 2 — Analyse SonarQube
+
+SonarQube LTS 9.9 déployé localement via Docker sur `localhost:9000`.
+
+**Résultats de l'analyse (shadcn/ui taxonomy) :**
+
+| Sévérité | Règle | Nb | Description |
+|----------|-------|----|-------------|
+| CRITICAL | S3504 | 1 | `var` déclaration globale |
+| MAJOR | S905 | 4 | Expression sans effet (return manquant) |
+| MAJOR | S6479 | 6 | Clé React basée sur l'index du tableau |
+| MAJOR | S6478 | 2 | Composants définis dans la fonction de rendu |
+| MINOR | S1128 | 7 | Imports inutilisés |
+| MINOR | S4325 | 1 | Assertion de type inutile |
+| INFO | S1135 | 4 | Commentaires TODO |
+| **Total** | | **25** | |
+
+> **Screenshot SonarQube :**  
+> *(Ajouter ici une capture du dashboard SonarQube)*
+
+---
+
+## Étape 3 — Tickets Jira & corrections
+
+20 tickets créés dans Jira (KAN-4 à KAN-23), assignés à Maxime Mansiet (KAN-4→KAN-13) et Mael Bourdin (KAN-14→KAN-23).
+
+Chaque fix est commité avec la référence du ticket :
+
+```
+fix(KAN-4): replace var with const via globalThis cast in db.ts
+fix(KAN-5,KAN-6,KAN-7,KAN-8,KAN-9): replace array index keys with stable identifiers
+fix(KAN-10): move IconLeft/IconRight out of Calendar render function
+fix(KAN-11,KAN-12,KAN-13,KAN-14): add missing return statement in getXFromParams
+fix(KAN-15): remove unnecessary type assertion in route.ts
+fix(KAN-16,KAN-20,KAN-21,KAN-22): resolve TODO comments
+fix(KAN-17,...,KAN-23): remove unused imports
+```
+
+---
+
 # Taxonomy
 
 An open source application built using the new router, server components and everything new in Next.js 13.
