@@ -1,154 +1,169 @@
-# Taxonomy — DEVE427 Atelier 2
+# Taxonomy — DEVE427 TMA
 
-**Cours:** DEVE427 - Développement d'applications & TMA  
-**Auteur:** Maxime Mansiet  
-**GitHub:** https://github.com/AirKyzzZ/atelier2-DEVE427  
+**Cours:** DEVE427 — Développement d'applications & Tierce Maintenance Applicative
+**Fork:** https://github.com/AirKyzzZ/atelier2-DEVE427
+**Upstream:** https://github.com/shadcn-ui/taxonomy
 **Jira:** https://m4xxime.atlassian.net/jira/software/projects/KAN/boards/1
 
 ---
 
-## Étape 1 — Workflow Jira personnalisé
+## Atelier 1 — Choix du projet & périmètre de maintenance
 
-Le projet Jira "Cours TMA" (KAN) a été configuré avec un workflow personnalisé incluant une étape de validation intermédiaire.
+### Projet choisi
 
-**Statuts du workflow :**
-- À faire → En cours → **En validation** → Terminé
+`shadcn-ui/taxonomy` — application Next.js 13 (App Router, Server Components, MDX via Contentlayer, NextAuth, Prisma, Stripe). Le projet coche tous les critères imposés :
 
-**Contraintes de transitions :** seul le responsable qualité peut valider un ticket (transition vers "Terminé" bloquée sans passer par "En validation").
+| Critère | Statut |
+|---|---|
+| Open source (MIT) | OK |
+| Application web + API routes | OK |
+| Exécutable localement (`pnpm dev`) | OK |
+| Tests fonctionnels (quasi) inexistants | OK — aucun test avant ce fork |
+| Inactif / faible activité | OK — dernière activité significative > 18 mois |
+| Plusieurs dizaines de fichiers sources | OK — 15 dossiers métier, 100+ composants |
+| Centaines de commits | OK — historique Git riche |
 
-> **Screenshot du workflow Jira :**  
-> *(Ajouter ici une capture d'écran du workflow depuis Jira > Paramètres du projet > Workflow)*
+### Mission du fork
+
+Après exploration du dépôt original (sources, issues ouvertes, PRs en suspens), le fork se donne pour périmètre de maintenance :
+
+| Axe | Engagements du fork |
+|---|---|
+| **Stabilité** | Corriger les `var` globaux et expressions sans effet (page.tsx) qui provoquent des comportements non déterministes. Rendre `NEXTAUTH_URL` optionnel pour éviter les crashs en preview Vercel. |
+| **Performance** | Supprimer les composants définis en plein render (`calendar.tsx`), remplacer les `key={index}` React par des identifiants stables dans toutes les nav (main/sidebar/mobile/toc). |
+| **Sécurité** | Lever les TODO de `subscription.ts`, `route.ts`, `post.ts` qui trahissaient des contrôles manquants. Faire passer la gestion d'env vars par `@t3-oss/env-nextjs` pour valider les secrets au build. |
+| **Ergonomie & accessibilité** | Assurer la non-régression des parcours nav (desktop + mobile) via tests Playwright (Atelier 3). |
+| **Anomalies (bugs)** | Retours manquants dans `getXFromParams` (route handlers), assertion de type inutile dans `route.ts`, imports inutilisés (bruit). |
+| **Fonctionnalités manquantes** | Mise en place d'une chaîne de qualité (SonarQube + Jira + Playwright) là où il n'existait rien. |
+
+Ce périmètre évoluera si de nouvelles issues sont remontées par SonarQube ou par les tests de non-régression.
+
+### Équipe et rôles MOE
+
+| Initiales | Membre | Rôle MOE | Responsabilités |
+|---|---|---|---|
+| **MM** | Maxime Mansiet | Chef de projet / Tech Lead | Architecture, revue de code, suivi qualité, transitions Jira |
+| **MB** | Mael Bourdin | Développeur / Responsable qualité | Implémentation des fixes, exécution SonarQube, validation des tickets |
+
+Répartition des tickets SonarQube (Atelier 2) :
+- **MM** : KAN-4 → KAN-13 (10 tickets, sévérité Critical / Major)
+- **MB** : KAN-14 → KAN-23 (10 tickets, sévérité Minor / Info / Bug)
+
+Le README est historisé (voir `git log -- README.md`).
 
 ---
 
-## Étape 2 — Analyse SonarQube
+## Atelier 2 — Outils de suivi
 
-SonarQube LTS 9.9 déployé localement via Docker sur `localhost:9000`.
+### Étape 1 — Workflow Jira personnalisé
 
-**Résultats de l'analyse (shadcn/ui taxonomy) :**
+Projet Jira de type Kanban **KAN — Cours TMA** (https://m4xxime.atlassian.net/jira/software/projects/KAN/boards/1).
 
-| Sévérité | Règle | Nb | Description |
-|----------|-------|----|-------------|
-| CRITICAL | S3504 | 1 | `var` déclaration globale |
-| MAJOR | S905 | 4 | Expression sans effet (return manquant) |
-| MAJOR | S6479 | 6 | Clé React basée sur l'index du tableau |
-| MAJOR | S6478 | 2 | Composants définis dans la fonction de rendu |
-| MINOR | S1128 | 7 | Imports inutilisés |
-| MINOR | S4325 | 1 | Assertion de type inutile |
-| INFO | S1135 | 4 | Commentaires TODO |
-| **Total** | | **25** | |
+Le workflow a été personnalisé pour intégrer une **étape de validation obligatoire** par un autre membre de l'équipe que l'assigné, et pour **contraindre les transitions** (pas de saut direct de `En cours` vers `Terminé`).
 
-> **Screenshot SonarQube :**  
-> *(Ajouter ici une capture du dashboard SonarQube)*
-
----
-
-## Étape 3 — Tickets Jira & corrections
-
-20 tickets créés dans Jira (KAN-4 à KAN-23), assignés à Maxime Mansiet (KAN-4→KAN-13) et Mael Bourdin (KAN-14→KAN-23).
-
-Chaque fix est commité avec la référence du ticket :
+**Statuts :**
 
 ```
+À faire  ──▶  En cours  ──▶  En cours de revue  ──▶  Terminé
+   ▲              │                     │
+   └──────────────┴─────────────────────┘  (retour possible en arrière)
+```
+
+- La transition `En cours → Terminé` est désactivée : il faut passer par `En cours de revue`.
+- `En cours de revue` matérialise la validation par un pair : le responsable qualité (MB) valide les fixes de MM et vice-versa.
+
+**Screenshot du workflow :**
+
+![Jira workflow](./docs/jira-workflow.png)
+
+> Si l'image n'apparaît pas, la capture est à placer dans `docs/jira-workflow.png`. Elle se prend via **Jira → Paramètres du projet → Workflows → `workflow actif` → Diagramme**.
+
+### Étape 2 — Analyse SonarQube
+
+SonarQube LTS 9.9 a été déployé localement via Docker (`localhost:9000`) sur le poste de MM. Le projet a été importé via `sonar-scanner` (configuration dans `.scannerwork/`).
+
+**Résultats de l'analyse — 25 issues détectées, regroupées en 20 tickets Jira** (certaines règles concentrent plusieurs lignes dans un même fichier, traitées en un seul ticket) :
+
+| Sévérité | Règle Sonar | Nb issues | Nb tickets | Description |
+|----------|-------|----|----|-------------|
+| CRITICAL | S3504 | 1 | 1 | `var` global (db.ts) |
+| MAJOR | S6479 | 6 | 6 | `key={index}` dans les listes React (nav, sidebar, toc, mobile, main) |
+| MAJOR | S6478 | 2 | 2 | Composant défini pendant le render (calendar) |
+| MAJOR | S905 | 3 | 3 | Expressions sans effet / return manquant (page.tsx) |
+| MINOR | S1128 | 7 | 3 | Imports inutilisés (page.tsx regroupe 5 imports, layout.tsx et loading.tsx en ont 1 chacun) |
+| MINOR | S4325 | 1 | 1 | Assertion de type superflue (route.ts) |
+| INFO | S1135 | 4 | 4 | Commentaires `TODO` non résolus |
+| **Total** | | **24** | **20** | |
+
+**Note d'écart :** le rapport SonarQube liste 24 issues individuelles → 20 tickets Jira. L'écart provient de la règle S1128 (imports inutilisés) qui a été traitée en un ticket par fichier impacté plutôt qu'en un ticket par import, car un seul commit supprime tous les imports concernés d'un même fichier.
+
+**Screenshot SonarQube :**
+
+![SonarQube dashboard](./docs/sonarqube-dashboard.png)
+
+> Capture à placer dans `docs/sonarqube-dashboard.png`. À prendre sur http://localhost:9000/dashboard?id=<projectKey>.
+
+### Étape 3 — Tickets Jira & corrections
+
+Les 20 tickets KAN-4 → KAN-23 ont été créés dans Jira, parcourus dans le workflow (`À faire → En cours → En cours de revue → Terminé`) et chaque fix a été commité avec la référence du ticket dans le message :
+
+```text
 fix(KAN-4): replace var with const via globalThis cast in db.ts
 fix(KAN-5,KAN-6,KAN-7,KAN-8,KAN-9): replace array index keys with stable identifiers
 fix(KAN-10): move IconLeft/IconRight out of Calendar render function
 fix(KAN-11,KAN-12,KAN-13,KAN-14): add missing return statement in getXFromParams
 fix(KAN-15): remove unnecessary type assertion in route.ts
-fix(KAN-16,KAN-20,KAN-21,KAN-22): resolve TODO comments
-fix(KAN-17,...,KAN-23): remove unused imports
+fix(KAN-16,KAN-20,KAN-21,KAN-22): resolve TODO comments (SonarQube S1135)
+fix(KAN-17,KAN-18,KAN-19,KAN-20,KAN-21,KAN-22,KAN-23): remove unused imports
+```
+
+Tous les tickets sont en statut `Terminé` à la date de la remise.
+
+---
+
+## Atelier 3 — Tests fonctionnels & non-régression
+
+Le plan de test complet est décrit dans [`TESTS.md`](./TESTS.md) (cas usuels, extrêmes, erreur et identification explicite des cas de non-régression liés aux tickets KAN).
+
+### Stack de test
+
+- **Playwright** (`@playwright/test`) configuré via `playwright.config.ts`.
+- Exécution locale contre `http://localhost:3000` (le dev server peut être démarré automatiquement par Playwright via l'option `webServer`).
+- Rapport HTML généré sous `playwright-report/` (ignoré par Git).
+
+### Lancer les tests
+
+```sh
+# 1. Démarrer l'app (dans un terminal)
+pnpm dev
+
+# 2. Lancer la suite (dans un autre terminal)
+pnpm exec playwright test                 # headless par défaut
+pnpm exec playwright test --ui            # mode UI interactif
+pnpm exec playwright show-report          # ouvrir le dernier rapport HTML
+```
+
+### Organisation des specs
+
+```
+tests/
+├── home.spec.ts            # Cas usuels : accueil, nav desktop
+├── navigation.spec.ts      # Non-régression KAN-5..10 (keys stables dans nav)
+├── blog.spec.ts            # Non-régression KAN-8 (toc) + cas usuel contenu MDX
+├── docs.spec.ts            # Non-régression KAN-13..15 (imports), KAN-21..23 (rendering)
+└── responsive.spec.ts      # Cas usuel mobile + non-régression mobile-nav (KAN-9)
 ```
 
 ---
 
-# Taxonomy
-
-An open source application built using the new router, server components and everything new in Next.js 13.
-
-> **Warning**
-> This app is a work in progress. I'm building this in public. You can follow the progress on Twitter [@shadcn](https://twitter.com/shadcn).
-> See the roadmap below.
-
-## About this project
-
-This project as an experiment to see how a modern app (with features like authentication, subscriptions, API routes, static pages for docs ...etc) would work in Next.js 13 and server components.
-
-**This is not a starter template.**
-
-A few people have asked me to turn this into a starter. I think we could do that once the new features are out of beta.
-
-## Note on Performance
-
-> **Warning**
-> This app is using the unstable releases for Next.js 13 and React 18. The new router and app dir is still in beta and not production-ready.
-> **Expect some performance hits when testing the dashboard**.
-> If you see something broken, you can ping me [@shadcn](https://twitter.com/shadcn).
-
-## Features
-
-- New `/app` dir,
-- Routing, Layouts, Nested Layouts and Layout Groups
-- Data Fetching, Caching and Mutation
-- Loading UI
-- Route handlers
-- Metadata files
-- Server and Client Components
-- API Routes and Middlewares
-- Authentication using **NextAuth.js**
-- ORM using **Prisma**
-- Database on **PlanetScale**
-- UI Components built using **Radix UI**
-- Documentation and blog using **MDX** and **Contentlayer**
-- Subscriptions using **Stripe**
-- Styled using **Tailwind CSS**
-- Validations using **Zod**
-- Written in **TypeScript**
-
-## Roadmap
-
-- [x] ~Add MDX support for basic pages~
-- [x] ~Build marketing pages~
-- [x] ~Subscriptions using Stripe~
-- [x] ~Responsive styles~
-- [x] ~Add OG image for blog using @vercel/og~
-- [x] Dark mode
-
-## Known Issues
-
-A list of things not working right now:
-
-1. ~GitHub authentication (use email)~
-2. ~[Prisma: Error: ENOENT: no such file or directory, open '/var/task/.next/server/chunks/schema.prisma'](https://github.com/prisma/prisma/issues/16117)~
-3. ~[Next.js 13: Client side navigation does not update head](https://github.com/vercel/next.js/issues/42414)~
-4. [Cannot use opengraph-image.tsx inside catch-all routes](https://github.com/vercel/next.js/issues/48162)
-
-## Why not tRPC, Turborepo or X?
-
-I might add this later. For now, I want to see how far we can get using Next.js only.
-
-If you have some suggestions, feel free to create an issue.
-
-## Running Locally
-
-1. Install dependencies using pnpm:
+## Running Locally (upstream)
 
 ```sh
 pnpm install
-```
-
-2. Copy `.env.example` to `.env.local` and update the variables.
-
-```sh
-cp .env.example .env.local
-```
-
-3. Start the development server:
-
-```sh
+cp .env.example .env.local   # et compléter les variables
 pnpm dev
 ```
 
 ## License
 
-Licensed under the [MIT license](https://github.com/shadcn/taxonomy/blob/main/LICENSE.md).
-
+MIT — voir [LICENSE.md](./LICENSE.md). Projet upstream : [shadcn-ui/taxonomy](https://github.com/shadcn-ui/taxonomy).
