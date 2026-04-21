@@ -72,11 +72,9 @@ Le workflow a été personnalisé pour intégrer une **étape de validation obli
 - La transition `En cours → Terminé` est désactivée : il faut passer par `En cours de revue`.
 - `En cours de revue` matérialise la validation par un pair : le responsable qualité (MB) valide les fixes de MM et vice-versa.
 
-**Screenshot du workflow :**
+**Screenshot du workflow Jira** (vue Board, les 20 tickets sont en `Terminé` après validation dans `En cours de revue`) :
 
-![Jira workflow](./docs/jira-workflow.png)
-
-> Si l'image n'apparaît pas, la capture est à placer dans `docs/jira-workflow.png`. Elle se prend via **Jira → Paramètres du projet → Workflows → `workflow actif` → Diagramme**.
+![Jira workflow board](./docs/jira-workflow.png)
 
 ### Étape 2 — Analyse SonarQube
 
@@ -97,11 +95,11 @@ SonarQube LTS 9.9 a été déployé localement via Docker (`localhost:9000`) sur
 
 **Note d'écart :** le rapport SonarQube liste 24 issues individuelles → 20 tickets Jira. L'écart provient de la règle S1128 (imports inutilisés) qui a été traitée en un ticket par fichier impacté plutôt qu'en un ticket par import, car un seul commit supprime tous les imports concernés d'un même fichier.
 
-**Screenshot SonarQube :**
+**Screenshot SonarQube — dashboard post-correction** (Quality Gate `Passed`, toutes les issues des 20 tickets KAN-4..23 ont été résolues) :
 
 ![SonarQube dashboard](./docs/sonarqube-dashboard.png)
 
-> Capture à placer dans `docs/sonarqube-dashboard.png`. À prendre sur http://localhost:9000/dashboard?id=<projectKey>.
+> La capture montre l'état du projet **après** les commits `fix(KAN-X)`. L'analyse initiale (avant fixes) avait remonté les 24 issues listées dans le tableau ci-dessus ; ces issues sont ce qui a servi à créer les tickets Jira. La suite de scripts pour reproduire le scan est dans `scripts/screenshot-sonar.mjs`.
 
 ### Étape 3 — Tickets Jira & corrections
 
