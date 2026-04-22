@@ -384,6 +384,28 @@
         height: 100%;
         image-rendering: pixelated;
       }
+      .title-qr.loopback-warn {
+        background: #fff5f5;
+        border-color: var(--red);
+        max-width: clamp(220px, 26vw, 340px);
+      }
+      .title-qr.loopback-warn .qr-target {
+        aspect-ratio: auto;
+        padding: clamp(0.4rem, 1vw, 1rem) 0.2rem;
+      }
+      .title-qr.loopback-warn .loopback-msg {
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--red);
+        line-height: 1.4;
+        text-align: center;
+      }
+      .title-qr.loopback-warn .label {
+        color: var(--red);
+      }
+      .title-qr.loopback-warn .pulse {
+        background: var(--red);
+      }
       .title-qr .label {
         font-family: var(--font-mono);
         font-size: var(--small-size);
@@ -2157,13 +2179,39 @@
           sessionStorage.setItem("presenter-peer-id", peerId)
         }
 
-        const remoteUrl = `${location.origin}${
+        /* Build the URL the phone will open.
+           A phone cannot reach "localhost" or "127.0.0.1" on the presenter —
+           those names resolve to the phone itself. If we're on a loopback
+           origin we either honour a ?lan=<ip> override or degrade to a
+           textual "open via LAN IP" hint instead of a useless QR. */
+        const LOOPBACK_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "::1"]
+        const isLoopback = LOOPBACK_HOSTS.includes(location.hostname)
+        const lanOverride = params.get("lan")
+        let remoteHost = location.host
+        if (isLoopback && lanOverride) {
+          remoteHost =
+            lanOverride + (location.port ? ":" + location.port : "")
+        }
+        const canonicalForLoopback = isLoopback && !lanOverride
+        const remoteUrl = `${location.protocol}//${remoteHost}${
           location.pathname
         }?remote=${encodeURIComponent(peerId)}`
 
         /* Generate QR code on title slide using qrcodejs (davidshimjs) */
         const qrTarget = document.getElementById("qrCanvas")
-        if (qrTarget && window.QRCode) {
+        const titleQr = document.getElementById("titleQr")
+        if (canonicalForLoopback && titleQr) {
+          // Replace the QR surface with actionable instructions.
+          titleQr.classList.add("loopback-warn")
+          const warn = document.createElement("div")
+          warn.className = "loopback-msg"
+          warn.textContent =
+            "Ouvre cette page via l'IP LAN de ton Mac pour que le QR pointe sur une URL que ton téléphone peut atteindre (ex. http://10.0.0.x:8080/)."
+          qrTarget?.replaceChildren(warn)
+          console.warn(
+            "[remote] Loopback host detected. Reopen via LAN IP, or append ?lan=<ip> to this URL to force the QR target."
+          )
+        } else if (qrTarget && window.QRCode) {
           qrTarget.replaceChildren() // idempotent on hot reload / reconnect
           try {
             new QRCode(qrTarget, {

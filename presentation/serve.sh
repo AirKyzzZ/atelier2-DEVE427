@@ -21,16 +21,25 @@ cat <<EOF
 ================================================================
   Taxonomy TMA · presentation server
 ================================================================
-  Presenter (this mac)  :  http://localhost:${PORT}/
-  Phone (same Wi-Fi)    :  http://${LAN_IP:-<lan-ip>}:${PORT}/
-  Stop                  :  Ctrl+C
+  Open on this mac       :  http://${LAN_IP:-<lan-ip>}:${PORT}/
+  Phone (same Wi-Fi)     :  http://${LAN_IP:-<lan-ip>}:${PORT}/
+  Fallback if no LAN IP  :  http://localhost:${PORT}/?lan=${LAN_IP:-<lan-ip>}
+  Stop                   :  Ctrl+C
 ================================================================
 
-The QR code on the title slide encodes the phone URL with a
-peer-id query param; scan it from your phone, tap a button,
-the slide moves. Keyboard arrows still work as a fallback.
+IMPORTANT: Open the deck on this mac via the LAN IP above, NOT
+localhost. A QR code rendered from a localhost URL is useless —
+the phone would try to reach itself. If you're stuck on
+localhost, append ?lan=<ip> to force the QR target.
+
+Keyboard fallback always works: arrows, space, F for fullscreen.
 
 EOF
+
+# Try to open the right URL automatically when a LAN IP is known.
+if [[ -n "${LAN_IP:-}" ]] && command -v open >/dev/null 2>&1; then
+  (sleep 0.8 && open "http://${LAN_IP}:${PORT}/") &
+fi
 
 cd "$DIR"
 exec python3 -m http.server "$PORT" --bind 0.0.0.0
