@@ -81,6 +81,15 @@ Le workflow a été personnalisé pour intégrer une **étape de validation obli
 
 ![Jira workflow board](./docs/jira-workflow.png)
 
+**Automatisation — transition déclenchée par le commit.** Mael Bourdin a ajouté une règle Jira Automation qui lit les commits liés au ticket et transitionne automatiquement le ticket de `À faire` vers `En cours` dès qu'un premier commit apparaît. Elle évite l'oubli de transition manuelle lors d'un `fix(KAN-X):…` et garantit que le board reflète l'état réel du dépôt.
+
+- **Trigger** : `Commit created` (événement remonté par l'intégration Git).
+- **Condition** : `Status equals "À faire"` (pas de bruit sur les tickets déjà en cours ou en revue).
+- **Action** : `Transition the work item to "En cours"`.
+- **Owner / Actor** : MB / `Automation for Jira`.
+
+![Jira automation — Commit created → En cours](./docs/jira-automation-commit.png)
+
 ### Étape 2 — Analyse SonarQube
 
 SonarQube LTS 9.9 a été déployé localement via Docker (`localhost:9000`) sur le poste de MM. Le projet a été importé via `sonar-scanner` (configuration dans `.scannerwork/`).

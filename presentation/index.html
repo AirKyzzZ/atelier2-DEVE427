@@ -1,988 +1,1717 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <title>DEVE427 — TMA · Fork taxonomy</title>
 
     <!-- Fonts: Archivo Black (display) + Archivo (body) + JetBrains Mono (code) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- PeerJS + QRCode for phone remote control -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
-        /* =========================================================
+      /* =========================================================
            THEME TOKENS — change these to re-skin the whole deck.
            ========================================================= */
-        :root {
-            --bg: #f5f3ec;           /* warm cream */
-            --bg-alt: #ece9df;        /* slightly darker */
-            --ink: #141414;           /* near-black */
-            --ink-soft: #3a3a3a;
-            --muted: #7a7a78;
-            --rule: rgba(20, 20, 20, 0.12);
+      :root {
+        --bg: #f5f3ec; /* warm cream */
+        --bg-alt: #ece9df; /* slightly darker */
+        --ink: #141414; /* near-black */
+        --ink-soft: #3a3a3a;
+        --muted: #7a7a78;
+        --rule: rgba(20, 20, 20, 0.12);
 
-            --blue: #2340ff;          /* engineering blue */
-            --red: #e63946;           /* ticket / alert red */
-            --green: #2d6a4f;         /* validated / done */
-            --yellow: #ffb703;
-            --card: #ffffff;
+        --blue: #2340ff; /* engineering blue */
+        --red: #e63946; /* ticket / alert red */
+        --green: #2d6a4f; /* validated / done */
+        --yellow: #ffb703;
+        --card: #ffffff;
 
-            --font-display: 'Archivo Black', 'Archivo', sans-serif;
-            --font-body: 'Archivo', sans-serif;
-            --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        --font-display: "Archivo Black", "Archivo", sans-serif;
+        --font-body: "Archivo", sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+          monospace;
 
-            --title-size: clamp(2rem, 6.5vw, 5.2rem);
-            --h2-size: clamp(1.4rem, 4vw, 2.8rem);
-            --h3-size: clamp(1rem, 2.4vw, 1.5rem);
-            --body-size: clamp(0.78rem, 1.35vw, 1.05rem);
-            --small-size: clamp(0.65rem, 1vw, 0.85rem);
-            --code-size: clamp(0.7rem, 1.1vw, 0.95rem);
+        --title-size: clamp(2rem, 6.5vw, 5.2rem);
+        --h2-size: clamp(1.4rem, 4vw, 2.8rem);
+        --h3-size: clamp(1.15rem, 2.6vw, 1.75rem);
+        /* Bumped for 5m projection distance: at 1080p, 1.6vw ≈ 31px body, 1.3vw ≈ 25px. */
+        --body-size: clamp(0.95rem, 1.6vw, 1.35rem);
+        --small-size: clamp(0.85rem, 1.3vw, 1.1rem);
+        --code-size: clamp(0.9rem, 1.4vw, 1.2rem);
 
-            --slide-padding: clamp(1.25rem, 4vw, 4rem);
-            --content-gap: clamp(0.6rem, 1.8vw, 1.8rem);
-            --element-gap: clamp(0.3rem, 0.9vw, 0.9rem);
+        --slide-padding: clamp(1.25rem, 4vw, 4rem);
+        --content-gap: clamp(0.6rem, 1.8vw, 1.8rem);
+        --element-gap: clamp(0.3rem, 0.9vw, 0.9rem);
 
-            --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
-            --duration-normal: 0.7s;
-        }
+        --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        --duration-normal: 0.7s;
+      }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        /* =========================================================
+      /* =========================================================
            VIEWPORT BASE (from frontend-slides skill)
            ========================================================= */
-        html, body { height: 100%; overflow-x: hidden; }
-        html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+      html,
+      body {
+        height: 100%;
+        overflow-x: hidden;
+      }
+      html {
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+      }
 
-        body {
-            font-family: var(--font-body);
-            font-size: var(--body-size);
-            color: var(--ink);
-            background: var(--bg);
-            line-height: 1.45;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+      body {
+        font-family: var(--font-body);
+        font-size: var(--body-size);
+        color: var(--ink);
+        background: var(--bg);
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
 
-        .slide {
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            overflow: hidden;
-            scroll-snap-align: start;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            padding: var(--slide-padding);
-            background: var(--bg);
-        }
+      .slide {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        padding: var(--slide-padding);
+        background: var(--bg);
+      }
 
-        .slide-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            max-height: 100%;
-            overflow: hidden;
-            gap: var(--content-gap);
-        }
+      .slide-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-height: 100%;
+        overflow: hidden;
+        gap: var(--content-gap);
+      }
 
-        img { max-width: 100%; max-height: min(52vh, 420px); object-fit: contain; }
+      img {
+        max-width: 100%;
+        max-height: min(52vh, 420px);
+        object-fit: contain;
+      }
 
-        /* =========================================================
+      /* =========================================================
            TYPOGRAPHY
            ========================================================= */
-        h1, h2, h3 { font-family: var(--font-display); font-weight: 900; line-height: 1.02; letter-spacing: -0.01em; color: var(--ink); }
-        h2 { font-size: var(--h2-size); letter-spacing: -0.015em; }
-        h3 { font-size: var(--h3-size); }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 900;
+        line-height: 1.02;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+      h2 {
+        font-size: var(--h2-size);
+        letter-spacing: -0.015em;
+      }
+      h3 {
+        font-size: var(--h3-size);
+      }
 
-        p { color: var(--ink-soft); }
-        strong { color: var(--ink); font-weight: 700; }
-        em { font-style: normal; color: var(--blue); font-weight: 600; }
+      p {
+        color: var(--ink-soft);
+      }
+      strong {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      em {
+        font-style: normal;
+        color: var(--blue);
+        font-weight: 600;
+      }
 
-        code, .mono { font-family: var(--font-mono); font-size: var(--code-size); }
+      code,
+      .mono {
+        font-family: var(--font-mono);
+        font-size: var(--code-size);
+      }
 
-        /* =========================================================
+      /* =========================================================
            REUSABLE ELEMENTS
            ========================================================= */
-        .slide-number {
-            position: absolute;
-            top: clamp(1rem, 2.5vw, 2rem);
-            left: clamp(1rem, 2.5vw, 2rem);
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            color: var(--muted);
-            letter-spacing: 0.15em;
-        }
+      .slide-number {
+        position: absolute;
+        top: clamp(1rem, 2.5vw, 2rem);
+        left: clamp(1rem, 2.5vw, 2rem);
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--muted);
+        letter-spacing: 0.15em;
+      }
 
-        .slide-tag {
-            position: absolute;
-            top: clamp(1rem, 2.5vw, 2rem);
-            right: clamp(1rem, 2.5vw, 2rem);
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            color: var(--muted);
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-        }
+      .slide-tag {
+        position: absolute;
+        top: clamp(1rem, 2.5vw, 2rem);
+        right: clamp(1rem, 2.5vw, 2rem);
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--muted);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
 
-        .chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35em;
-            padding: 0.25em 0.7em;
-            border-radius: 999px;
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            font-weight: 500;
-            background: var(--ink);
-            color: var(--bg);
-        }
-        .chip.blue { background: var(--blue); color: #fff; }
-        .chip.red { background: var(--red); color: #fff; }
-        .chip.green { background: var(--green); color: #fff; }
-        .chip.ghost { background: transparent; border: 1px solid var(--ink); color: var(--ink); }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+        padding: 0.25em 0.7em;
+        border-radius: 999px;
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        font-weight: 500;
+        background: var(--ink);
+        color: var(--bg);
+      }
+      .chip.blue {
+        background: var(--blue);
+        color: #fff;
+      }
+      .chip.red {
+        background: var(--red);
+        color: #fff;
+      }
+      .chip.green {
+        background: var(--green);
+        color: #fff;
+      }
+      .chip.ghost {
+        background: transparent;
+        border: 1px solid var(--ink);
+        color: var(--ink);
+      }
 
-        .rule { height: 1px; width: 100%; background: var(--rule); }
+      .rule {
+        height: 1px;
+        width: 100%;
+        background: var(--rule);
+      }
 
-        .kicker {
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: var(--muted);
-        }
+      .kicker {
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+      }
 
-        ul.bullets { list-style: none; display: flex; flex-direction: column; gap: var(--element-gap); }
-        ul.bullets li {
-            padding-left: 1.4em;
-            position: relative;
-            font-size: var(--body-size);
-        }
-        ul.bullets li::before {
-            content: "→";
-            position: absolute;
-            left: 0;
-            top: 0;
-            color: var(--red);
-            font-weight: 900;
-        }
+      ul.bullets {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: var(--element-gap);
+      }
+      ul.bullets li {
+        padding-left: 1.4em;
+        position: relative;
+        font-size: var(--body-size);
+      }
+      ul.bullets li::before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--red);
+        font-weight: 900;
+      }
 
-        /* =========================================================
+      /* =========================================================
            ANIMATION
            ========================================================= */
-        .reveal { opacity: 0; transform: translateY(24px); transition: opacity var(--duration-normal) var(--ease-expo), transform var(--duration-normal) var(--ease-expo); }
-        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
-        .slide.visible .reveal:nth-child(1) { transition-delay: 0.08s; }
-        .slide.visible .reveal:nth-child(2) { transition-delay: 0.18s; }
-        .slide.visible .reveal:nth-child(3) { transition-delay: 0.28s; }
-        .slide.visible .reveal:nth-child(4) { transition-delay: 0.38s; }
-        .slide.visible .reveal:nth-child(5) { transition-delay: 0.48s; }
-        .slide.visible .reveal:nth-child(6) { transition-delay: 0.56s; }
-        .slide.visible .reveal:nth-child(7) { transition-delay: 0.62s; }
+      .reveal {
+        opacity: 0;
+        transform: translateY(24px);
+        transition: opacity var(--duration-normal) var(--ease-expo),
+          transform var(--duration-normal) var(--ease-expo);
+      }
+      .slide.visible .reveal {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .slide.visible .reveal:nth-child(1) {
+        transition-delay: 0.08s;
+      }
+      .slide.visible .reveal:nth-child(2) {
+        transition-delay: 0.18s;
+      }
+      .slide.visible .reveal:nth-child(3) {
+        transition-delay: 0.28s;
+      }
+      .slide.visible .reveal:nth-child(4) {
+        transition-delay: 0.38s;
+      }
+      .slide.visible .reveal:nth-child(5) {
+        transition-delay: 0.48s;
+      }
+      .slide.visible .reveal:nth-child(6) {
+        transition-delay: 0.56s;
+      }
+      .slide.visible .reveal:nth-child(7) {
+        transition-delay: 0.62s;
+      }
 
-        /* =========================================================
+      /* =========================================================
            TITLE SLIDE (slide 1)
            ========================================================= */
-        .title-slide { justify-content: flex-end; background: var(--bg); }
-        .title-slide .brand-mark {
-            position: absolute;
-            top: clamp(1.5rem, 3vw, 3rem);
-            left: clamp(1.5rem, 3vw, 3rem);
-            display: flex;
-            align-items: center;
-            gap: 0.8em;
-        }
-        .brand-mark .dot { width: 0.9em; height: 0.9em; border-radius: 50%; background: var(--red); }
-        .brand-mark .name { font-family: var(--font-mono); font-size: var(--small-size); letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); }
+      .title-slide {
+        justify-content: flex-end;
+        background: var(--bg);
+      }
+      .title-slide .brand-mark {
+        position: absolute;
+        top: clamp(1.5rem, 3vw, 3rem);
+        left: clamp(1.5rem, 3vw, 3rem);
+        display: flex;
+        align-items: center;
+        gap: 0.8em;
+      }
+      .brand-mark .dot {
+        width: 0.9em;
+        height: 0.9em;
+        border-radius: 50%;
+        background: var(--red);
+      }
+      .brand-mark .name {
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
 
-        .title-slide h1 {
-            font-size: clamp(2.4rem, 9vw, 7rem);
-            line-height: 0.95;
-            text-transform: uppercase;
-        }
-        .title-slide h1 .accent { color: var(--red); }
-        .title-slide h1 .sub { display: block; font-family: var(--font-body); font-weight: 500; font-size: clamp(0.9rem, 1.8vw, 1.4rem); letter-spacing: 0.1em; text-transform: none; color: var(--muted); margin-top: clamp(0.5rem, 1.5vw, 1.2rem); }
+      .title-slide h1 {
+        font-size: clamp(2.4rem, 9vw, 7rem);
+        line-height: 0.95;
+        text-transform: uppercase;
+      }
+      .title-slide h1 .accent {
+        color: var(--red);
+      }
+      .title-slide h1 .sub {
+        display: block;
+        font-family: var(--font-body);
+        font-weight: 500;
+        font-size: clamp(0.9rem, 1.8vw, 1.4rem);
+        letter-spacing: 0.1em;
+        text-transform: none;
+        color: var(--muted);
+        margin-top: clamp(0.5rem, 1.5vw, 1.2rem);
+      }
 
-        .title-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: clamp(1rem, 3vw, 3rem);
-            margin-top: clamp(1rem, 3vw, 2.5rem);
-        }
-        .title-meta .team {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2em;
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            color: var(--ink-soft);
-        }
-        .title-meta .team strong { color: var(--ink); font-weight: 700; font-family: var(--font-body); font-size: clamp(0.85rem, 1.4vw, 1rem); }
+      .title-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: clamp(1rem, 3vw, 3rem);
+        margin-top: clamp(1rem, 3vw, 2.5rem);
+      }
+      .title-meta .team {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2em;
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--ink-soft);
+      }
+      .title-meta .team strong {
+        color: var(--ink);
+        font-weight: 700;
+        font-family: var(--font-body);
+        font-size: clamp(0.85rem, 1.4vw, 1rem);
+      }
 
-        .title-qr {
-            background: #fff;
-            padding: clamp(0.6rem, 1.5vw, 1.2rem);
-            border-radius: 8px;
-            box-shadow: 0 8px 32px rgba(20, 20, 20, 0.08);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.4em;
-            max-width: clamp(110px, 14vw, 180px);
+      .title-qr {
+        background: #fff;
+        padding: clamp(0.8rem, 1.8vw, 1.4rem);
+        border-radius: 10px;
+        box-shadow: 0 12px 40px rgba(20, 20, 20, 0.12);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.55em;
+        max-width: clamp(180px, 22vw, 300px);
+        border: 2px solid var(--ink);
+        animation: qr-nudge 2.4s var(--ease-expo) 1.2s 2;
+      }
+      @keyframes qr-nudge {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        25% { transform: translateY(-4px) rotate(-1.2deg); }
+        75% { transform: translateY(-4px) rotate(1.2deg); }
+      }
+      .title-qr .qr-target {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* qrcodejs injects both a <table> / <canvas> and an <img> — show the img */
+      }
+      .title-qr .qr-target canvas {
+        display: none;
+      }
+      .title-qr .qr-target img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+      }
+      .title-qr .label {
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        font-weight: 700;
+        color: var(--ink);
+        text-align: center;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .title-qr .label .hint {
+        display: block;
+        font-weight: 400;
+        font-size: calc(var(--small-size) * 0.85);
+        color: var(--muted);
+        text-transform: none;
+        letter-spacing: 0.02em;
+        margin-top: 0.2em;
+      }
+      .title-qr .pulse {
+        display: inline-block;
+        width: 0.55em;
+        height: 0.55em;
+        border-radius: 50%;
+        background: var(--muted);
+        margin-right: 0.4em;
+        vertical-align: middle;
+        transition: background 0.3s ease;
+      }
+      .title-qr.connected .pulse {
+        background: var(--green);
+        box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.5);
+        animation: ping 1.4s ease-out infinite;
+      }
+      @keyframes ping {
+        0% {
+          box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.5);
         }
-        .title-qr canvas { display: block; width: 100% !important; height: auto !important; }
-        .title-qr .label { font-family: var(--font-mono); font-size: var(--small-size); color: var(--ink); text-align: center; letter-spacing: 0.05em; }
-        .title-qr .pulse {
-            display: inline-block;
-            width: 0.55em;
-            height: 0.55em;
-            border-radius: 50%;
-            background: var(--muted);
-            margin-right: 0.4em;
-            vertical-align: middle;
-            transition: background 0.3s ease;
+        100% {
+          box-shadow: 0 0 0 12px rgba(45, 106, 79, 0);
         }
-        .title-qr.connected .pulse { background: var(--green); box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.5); animation: ping 1.4s ease-out infinite; }
-        @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.5); } 100% { box-shadow: 0 0 0 12px rgba(45, 106, 79, 0); } }
+      }
 
-        /* =========================================================
+      /* =========================================================
            TEAM SLIDE
            ========================================================= */
-        .team-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: clamp(0.8rem, 2vw, 2rem);
-            margin-top: clamp(0.8rem, 2vw, 2rem);
-        }
-        .team-card {
-            background: var(--card);
-            border: 1px solid var(--rule);
-            border-radius: 4px;
-            padding: clamp(0.9rem, 1.8vw, 1.8rem);
-            display: flex;
-            flex-direction: column;
-            gap: clamp(0.4rem, 1vw, 0.8rem);
-            position: relative;
-            overflow: hidden;
-        }
-        .team-card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0;
-            width: 6px; height: 100%;
-            background: var(--color, var(--ink));
-        }
-        .team-card[data-role="mm"] { --color: var(--red); }
-        .team-card[data-role="gl"] { --color: var(--blue); }
-        .team-card[data-role="mb"] { --color: var(--green); }
+      .team-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: clamp(0.8rem, 2vw, 2rem);
+        margin-top: clamp(0.8rem, 2vw, 2rem);
+      }
+      .team-card {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: clamp(0.9rem, 1.8vw, 1.8rem);
+        display: flex;
+        flex-direction: column;
+        gap: clamp(0.4rem, 1vw, 0.8rem);
+        position: relative;
+        overflow: hidden;
+      }
+      .team-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 100%;
+        background: var(--color, var(--ink));
+      }
+      .team-card[data-role="mm"] {
+        --color: var(--red);
+      }
+      .team-card[data-role="gl"] {
+        --color: var(--blue);
+      }
+      .team-card[data-role="mb"] {
+        --color: var(--green);
+      }
 
-        .team-card .initials {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            color: var(--color);
-            line-height: 0.9;
-        }
-        .team-card .name { font-size: clamp(0.95rem, 1.6vw, 1.2rem); font-weight: 700; color: var(--ink); }
-        .team-card .role { font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
-        .team-card .tickets { font-family: var(--font-mono); font-size: var(--small-size); color: var(--ink-soft); margin-top: auto; padding-top: clamp(0.4rem, 1vw, 0.8rem); border-top: 1px dashed var(--rule); }
-        .team-card .tickets strong { color: var(--color); }
+      .team-card .initials {
+        font-family: var(--font-display);
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        color: var(--color);
+        line-height: 0.9;
+      }
+      .team-card .name {
+        font-size: clamp(0.95rem, 1.6vw, 1.2rem);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .team-card .role {
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .team-card .tickets {
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--ink-soft);
+        margin-top: auto;
+        padding-top: clamp(0.4rem, 1vw, 0.8rem);
+        border-top: 1px dashed var(--rule);
+      }
+      .team-card .tickets strong {
+        color: var(--color);
+      }
 
-        /* =========================================================
+      /* =========================================================
            TWO-COL LAYOUT
            ========================================================= */
-        .two-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: clamp(1rem, 3vw, 3rem);
-            align-items: center;
-            flex: 1;
-            min-height: 0;
-        }
-        .two-col.wider-left { grid-template-columns: 1.3fr 1fr; }
-        .two-col .col { min-width: 0; display: flex; flex-direction: column; gap: var(--element-gap); }
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: clamp(1rem, 3vw, 3rem);
+        align-items: center;
+        flex: 1;
+        min-height: 0;
+      }
+      .two-col.wider-left {
+        grid-template-columns: 1.3fr 1fr;
+      }
+      .two-col .col {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--element-gap);
+      }
 
-        /* =========================================================
+      /* =========================================================
            TABLES
            ========================================================= */
-        table.data {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: var(--small-size);
-        }
-        table.data th, table.data td {
-            text-align: left;
-            padding: clamp(0.35rem, 0.9vw, 0.7rem) clamp(0.5rem, 1.2vw, 1rem);
-            border-bottom: 1px solid var(--rule);
-        }
-        table.data th {
-            font-family: var(--font-mono);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--muted);
-            font-size: calc(var(--small-size) * 0.9);
-        }
-        table.data td.mono, table.data td .mono { font-family: var(--font-mono); }
-        table.data tr.total { font-weight: 800; background: var(--bg-alt); }
-        table.data tr.total td { border-bottom: none; border-top: 2px solid var(--ink); }
-        table.data .sev {
-            font-family: var(--font-mono);
-            font-size: calc(var(--small-size) * 0.95);
-            padding: 0.15em 0.55em;
-            border-radius: 3px;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            display: inline-block;
-        }
-        .sev.critical { background: var(--red); color: #fff; }
-        .sev.major { background: var(--yellow); color: var(--ink); }
-        .sev.minor { background: var(--blue); color: #fff; opacity: 0.9; }
-        .sev.info { background: var(--ink-soft); color: var(--bg); }
+      table.data {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--small-size);
+      }
+      table.data th,
+      table.data td {
+        text-align: left;
+        padding: clamp(0.35rem, 0.9vw, 0.7rem) clamp(0.5rem, 1.2vw, 1rem);
+        border-bottom: 1px solid var(--rule);
+      }
+      table.data th {
+        font-family: var(--font-mono);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        font-size: calc(var(--small-size) * 0.9);
+      }
+      table.data td.mono,
+      table.data td .mono {
+        font-family: var(--font-mono);
+      }
+      table.data tr.total {
+        font-weight: 800;
+        background: var(--bg-alt);
+      }
+      table.data tr.total td {
+        border-bottom: none;
+        border-top: 2px solid var(--ink);
+      }
+      table.data .sev {
+        font-family: var(--font-mono);
+        font-size: calc(var(--small-size) * 0.95);
+        padding: 0.15em 0.55em;
+        border-radius: 3px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        display: inline-block;
+      }
+      .sev.critical {
+        background: var(--red);
+        color: #fff;
+      }
+      .sev.major {
+        background: var(--yellow);
+        color: var(--ink);
+      }
+      .sev.minor {
+        background: var(--blue);
+        color: #fff;
+        opacity: 0.9;
+      }
+      .sev.info {
+        background: var(--ink-soft);
+        color: var(--bg);
+      }
 
-        /* =========================================================
+      /* =========================================================
            WORKFLOW DIAGRAM
            ========================================================= */
-        .workflow {
-            display: flex;
-            flex-wrap: nowrap;
-            align-items: center;
-            justify-content: center;
-            gap: clamp(0.3rem, 1vw, 0.8rem);
-            margin: clamp(0.8rem, 2vw, 1.5rem) 0;
-            flex-wrap: wrap;
-        }
-        .workflow .state {
-            padding: clamp(0.5rem, 1.2vw, 1rem) clamp(0.7rem, 1.8vw, 1.4rem);
-            border: 2px solid var(--ink);
-            background: var(--card);
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            white-space: nowrap;
-        }
-        .workflow .state.active { background: var(--blue); color: #fff; border-color: var(--blue); }
-        .workflow .state.done { background: var(--green); color: #fff; border-color: var(--green); }
-        .workflow .arrow { color: var(--muted); font-family: var(--font-mono); font-weight: 700; }
-        .workflow .arrow.forbidden { color: var(--red); text-decoration: line-through; }
+      .workflow {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(0.3rem, 1vw, 0.8rem);
+        margin: clamp(0.8rem, 2vw, 1.5rem) 0;
+        flex-wrap: wrap;
+      }
+      .workflow .state {
+        padding: clamp(0.5rem, 1.2vw, 1rem) clamp(0.7rem, 1.8vw, 1.4rem);
+        border: 2px solid var(--ink);
+        background: var(--card);
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+      }
+      .workflow .state.active {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      .workflow .state.done {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+      }
+      .workflow .arrow {
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-weight: 700;
+      }
+      .workflow .arrow.forbidden {
+        color: var(--red);
+        text-decoration: line-through;
+      }
 
-        /* =========================================================
+      /* =========================================================
            CODE BLOCKS
            ========================================================= */
-        pre.code {
-            background: #15181f;
-            color: #e5e7eb;
-            padding: clamp(0.7rem, 1.5vw, 1.4rem);
-            border-radius: 4px;
-            font-family: var(--font-mono);
-            font-size: var(--code-size);
-            line-height: 1.55;
-            overflow: hidden;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        pre.code .cm { color: #64748b; }
-        pre.code .kw { color: #f59e0b; }
-        pre.code .str { color: #a7f3d0; }
-        pre.code .fn { color: #93c5fd; }
-        pre.code .rm { background: rgba(230, 57, 70, 0.18); display: inline-block; width: 100%; padding: 0 0.3em; border-left: 3px solid var(--red); }
-        pre.code .add { background: rgba(45, 106, 79, 0.22); display: inline-block; width: 100%; padding: 0 0.3em; border-left: 3px solid var(--green); }
+      pre.code {
+        background: #15181f;
+        color: #e5e7eb;
+        padding: clamp(0.7rem, 1.5vw, 1.4rem);
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: var(--code-size);
+        line-height: 1.55;
+        overflow: hidden;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      pre.code .cm {
+        color: #64748b;
+      }
+      pre.code .kw {
+        color: #f59e0b;
+      }
+      pre.code .str {
+        color: #a7f3d0;
+      }
+      pre.code .fn {
+        color: #93c5fd;
+      }
+      pre.code .rm {
+        background: rgba(230, 57, 70, 0.18);
+        display: inline-block;
+        width: 100%;
+        padding: 0 0.3em;
+        border-left: 3px solid var(--red);
+      }
+      pre.code .add {
+        background: rgba(45, 106, 79, 0.22);
+        display: inline-block;
+        width: 100%;
+        padding: 0 0.3em;
+        border-left: 3px solid var(--green);
+      }
 
-        /* =========================================================
+      /* =========================================================
            SECTION DIVIDER (large numbered section intros)
            ========================================================= */
-        .section-intro {
-            justify-content: center;
-            background: var(--ink);
-            color: var(--bg);
-        }
-        .section-intro .num {
-            font-family: var(--font-display);
-            font-size: clamp(7rem, 22vw, 18rem);
-            line-height: 0.85;
-            color: var(--red);
-            letter-spacing: -0.04em;
-        }
-        .section-intro h2 { color: var(--bg); font-size: clamp(2rem, 6vw, 4.5rem); text-transform: uppercase; letter-spacing: -0.02em; }
-        .section-intro .kicker { color: rgba(245, 243, 236, 0.55); }
-        .section-intro .slide-number, .section-intro .slide-tag { color: rgba(245, 243, 236, 0.5); }
+      .section-intro {
+        justify-content: center;
+        background: var(--ink);
+        color: var(--bg);
+      }
+      .section-intro .num {
+        font-family: var(--font-display);
+        font-size: clamp(7rem, 22vw, 18rem);
+        line-height: 0.85;
+        color: var(--red);
+        letter-spacing: -0.04em;
+      }
+      .section-intro h2 {
+        color: var(--bg);
+        font-size: clamp(2rem, 6vw, 4.5rem);
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+      }
+      .section-intro .kicker {
+        color: rgba(245, 243, 236, 0.55);
+      }
+      .section-intro .slide-number,
+      .section-intro .slide-tag {
+        color: rgba(245, 243, 236, 0.5);
+      }
 
-        /* =========================================================
+      /* =========================================================
            SCREENSHOT CONTAINER
            ========================================================= */
-        .screenshot {
-            background: var(--card);
-            padding: clamp(0.5rem, 1.2vw, 1rem);
-            border: 1px solid var(--rule);
-            border-radius: 4px;
-            box-shadow: 0 12px 32px rgba(20, 20, 20, 0.08);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            max-height: min(62vh, 520px);
-            overflow: hidden;
-        }
-        .screenshot img { max-height: min(58vh, 480px); }
+      .screenshot {
+        background: var(--card);
+        padding: clamp(0.5rem, 1.2vw, 1rem);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        box-shadow: 0 12px 32px rgba(20, 20, 20, 0.08);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        max-height: min(62vh, 520px);
+        overflow: hidden;
+      }
+      .screenshot img {
+        max-height: min(58vh, 480px);
+      }
 
-        /* =========================================================
+      /* =========================================================
            METRICS (Bilan slide)
            ========================================================= */
-        .metrics {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: clamp(0.6rem, 1.5vw, 1.5rem);
-            margin: clamp(1rem, 2.5vw, 2rem) 0;
-        }
-        .metric {
-            background: var(--card);
-            border: 1px solid var(--rule);
-            border-radius: 4px;
-            padding: clamp(0.8rem, 1.6vw, 1.4rem);
-            display: flex;
-            flex-direction: column;
-            gap: 0.3em;
-        }
-        .metric .value { font-family: var(--font-display); font-size: clamp(1.8rem, 4.5vw, 3.2rem); line-height: 1; color: var(--ink); }
-        .metric .label { font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: clamp(0.6rem, 1.5vw, 1.5rem);
+        margin: clamp(1rem, 2.5vw, 2rem) 0;
+      }
+      .metric {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: clamp(0.8rem, 1.6vw, 1.4rem);
+        display: flex;
+        flex-direction: column;
+        gap: 0.3em;
+      }
+      .metric .value {
+        font-family: var(--font-display);
+        font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+        line-height: 1;
+        color: var(--ink);
+      }
+      .metric .label {
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
 
-        /* =========================================================
+      /* =========================================================
            PROGRESS BAR
            ========================================================= */
-        .progress-bar {
-            position: fixed;
-            top: 0; left: 0;
-            height: 3px;
-            background: var(--red);
-            z-index: 100;
-            transition: width 0.35s var(--ease-expo);
-            width: 0%;
-        }
+      .progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: var(--red);
+        z-index: 100;
+        transition: width 0.35s var(--ease-expo);
+        width: 0%;
+      }
 
-        /* =========================================================
+      /* =========================================================
            REMOTE STATUS PIN (on every slide, small)
            ========================================================= */
-        .remote-pin {
-            position: fixed;
-            bottom: clamp(0.6rem, 1.5vw, 1.2rem);
-            left: clamp(0.6rem, 1.5vw, 1.2rem);
-            display: flex;
-            align-items: center;
-            gap: 0.4em;
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            color: var(--muted);
-            z-index: 50;
-            pointer-events: none;
-        }
-        .remote-pin .dot { width: 0.55em; height: 0.55em; border-radius: 50%; background: var(--muted); }
-        .remote-pin.connected .dot { background: var(--green); }
-        .remote-pin.error .dot { background: var(--red); }
+      .remote-pin {
+        position: fixed;
+        bottom: clamp(0.6rem, 1.5vw, 1.2rem);
+        left: clamp(0.6rem, 1.5vw, 1.2rem);
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--muted);
+        z-index: 50;
+        pointer-events: none;
+      }
+      .remote-pin .dot {
+        width: 0.55em;
+        height: 0.55em;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .remote-pin.connected .dot {
+        background: var(--green);
+      }
+      .remote-pin.error .dot {
+        background: var(--red);
+      }
 
-        /* =========================================================
+      /* =========================================================
            KEYBOARD HINT (bottom right, title slide)
            ========================================================= */
-        .kbd-hint {
-            position: fixed;
-            bottom: clamp(0.6rem, 1.5vw, 1.2rem);
-            right: clamp(0.6rem, 1.5vw, 1.2rem);
-            font-family: var(--font-mono);
-            font-size: var(--small-size);
-            color: var(--muted);
-            z-index: 50;
-            pointer-events: none;
-        }
-        .kbd-hint kbd { display: inline-block; padding: 0.15em 0.45em; border: 1px solid var(--rule); border-radius: 3px; background: var(--card); color: var(--ink-soft); }
+      .kbd-hint {
+        position: fixed;
+        bottom: clamp(0.6rem, 1.5vw, 1.2rem);
+        right: clamp(0.6rem, 1.5vw, 1.2rem);
+        font-family: var(--font-mono);
+        font-size: var(--small-size);
+        color: var(--muted);
+        z-index: 50;
+        pointer-events: none;
+      }
+      .kbd-hint kbd {
+        display: inline-block;
+        padding: 0.15em 0.45em;
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        background: var(--card);
+        color: var(--ink-soft);
+      }
 
-        /* =========================================================
+      /* =========================================================
            CLOSING SLIDE
            ========================================================= */
-        .closing-slide { justify-content: center; align-items: center; background: var(--ink); color: var(--bg); text-align: center; }
-        .closing-slide h1 { color: var(--bg); font-size: clamp(3rem, 12vw, 10rem); line-height: 0.9; }
-        .closing-slide h1 .accent { color: var(--red); }
-        .closing-slide p { color: rgba(245, 243, 236, 0.6); font-size: var(--body-size); margin-top: clamp(0.8rem, 2vw, 1.8rem); font-family: var(--font-mono); }
-        .closing-slide .slide-number, .closing-slide .slide-tag { color: rgba(245, 243, 236, 0.4); }
+      .closing-slide {
+        justify-content: center;
+        align-items: center;
+        background: var(--ink);
+        color: var(--bg);
+        text-align: center;
+      }
+      .closing-slide h1 {
+        color: var(--bg);
+        font-size: clamp(3rem, 12vw, 10rem);
+        line-height: 0.9;
+      }
+      .closing-slide h1 .accent {
+        color: var(--red);
+      }
+      .closing-slide p {
+        color: rgba(245, 243, 236, 0.6);
+        font-size: var(--body-size);
+        margin-top: clamp(0.8rem, 2vw, 1.8rem);
+        font-family: var(--font-mono);
+      }
+      .closing-slide .slide-number,
+      .closing-slide .slide-tag {
+        color: rgba(245, 243, 236, 0.4);
+      }
 
-        /* =========================================================
+      /* =========================================================
            RESPONSIVE / SHORT VIEWPORTS
            ========================================================= */
-        @media (max-height: 700px) {
-            :root {
-                --slide-padding: clamp(0.8rem, 3vw, 2rem);
-                --content-gap: clamp(0.4rem, 1.3vw, 1rem);
-                --title-size: clamp(1.6rem, 5vw, 3.2rem);
-            }
-            .team-grid { gap: 0.8rem; }
+      @media (max-height: 700px) {
+        :root {
+          --slide-padding: clamp(0.8rem, 3vw, 2rem);
+          --content-gap: clamp(0.4rem, 1.3vw, 1rem);
+          --title-size: clamp(1.6rem, 5vw, 3.2rem);
         }
-        @media (max-height: 600px) {
-            .remote-pin, .kbd-hint, .slide-number, .slide-tag { display: none; }
-            .screenshot img { max-height: 48vh; }
+        .team-grid {
+          gap: 0.8rem;
         }
-        @media (max-width: 720px) {
-            .team-grid { grid-template-columns: 1fr; }
-            .two-col { grid-template-columns: 1fr; }
-            .metrics { grid-template-columns: repeat(2, 1fr); }
-            .workflow { flex-direction: column; }
-            .workflow .arrow { transform: rotate(90deg); }
+      }
+      @media (max-height: 600px) {
+        .remote-pin,
+        .kbd-hint,
+        .slide-number,
+        .slide-tag {
+          display: none;
         }
+        .screenshot img {
+          max-height: 48vh;
+        }
+      }
+      @media (max-width: 720px) {
+        .team-grid {
+          grid-template-columns: 1fr;
+        }
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+        .metrics {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .workflow {
+          flex-direction: column;
+        }
+        .workflow .arrow {
+          transform: rotate(90deg);
+        }
+      }
 
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
-            html { scroll-behavior: auto; }
-            .title-qr.connected .pulse { animation: none; }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.2s !important;
         }
+        html {
+          scroll-behavior: auto;
+        }
+        .title-qr.connected .pulse {
+          animation: none;
+        }
+      }
 
-        /* =========================================================
+      /* =========================================================
            PHONE REMOTE VIEW (?remote=xxx)
            ========================================================= */
-        body.remote-mode { background: var(--ink); color: var(--bg); overflow: hidden; height: 100vh; }
-        .remote-app {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: max(env(safe-area-inset-top), 1.2rem) 1.2rem max(env(safe-area-inset-bottom), 1.2rem);
-            gap: 1rem;
-            color: var(--bg);
-        }
-        .remote-app header { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 0.8rem; color: rgba(245, 243, 236, 0.55); }
-        .remote-app header .status .dot { display: inline-block; width: 0.55em; height: 0.55em; border-radius: 50%; background: var(--yellow); margin-right: 0.4em; vertical-align: middle; }
-        .remote-app.connected header .status .dot { background: var(--green); }
-        .remote-app.error header .status .dot { background: var(--red); }
+      body.remote-mode {
+        background: var(--ink);
+        color: var(--bg);
+        overflow: hidden;
+        height: 100vh;
+      }
+      .remote-app {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: max(env(safe-area-inset-top), 1.2rem) 1.2rem
+          max(env(safe-area-inset-bottom), 1.2rem);
+        gap: 1rem;
+        color: var(--bg);
+      }
+      .remote-app header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        color: rgba(245, 243, 236, 0.55);
+      }
+      .remote-app header .status .dot {
+        display: inline-block;
+        width: 0.55em;
+        height: 0.55em;
+        border-radius: 50%;
+        background: var(--yellow);
+        margin-right: 0.4em;
+        vertical-align: middle;
+      }
+      .remote-app.connected header .status .dot {
+        background: var(--green);
+      }
+      .remote-app.error header .status .dot {
+        background: var(--red);
+      }
 
-        .remote-app h1 { font-family: var(--font-display); font-size: 2.4rem; line-height: 0.95; color: var(--bg); text-transform: uppercase; margin-top: 0.5rem; }
-        .remote-app h1 .accent { color: var(--red); }
-        .remote-app .context { font-family: var(--font-mono); font-size: 0.75rem; color: rgba(245, 243, 236, 0.5); }
+      .remote-app h1 {
+        font-family: var(--font-display);
+        font-size: 2.4rem;
+        line-height: 0.95;
+        color: var(--bg);
+        text-transform: uppercase;
+        margin-top: 0.5rem;
+      }
+      .remote-app h1 .accent {
+        color: var(--red);
+      }
+      .remote-app .context {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: rgba(245, 243, 236, 0.5);
+      }
 
-        .remote-controls {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 2fr 1fr 1fr;
-            gap: 0.8rem;
-            margin-top: 1rem;
-        }
-        .remote-btn {
-            font-family: var(--font-display);
-            font-size: clamp(1.4rem, 6vw, 2.2rem);
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-            background: #1f2230;
-            color: var(--bg);
-            border: 2px solid rgba(245, 243, 236, 0.08);
-            border-radius: 8px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: transform 0.12s ease, background 0.12s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4em;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-        .remote-btn:active { transform: scale(0.97); background: #2a2f42; }
-        .remote-btn.primary { background: var(--red); color: #fff; border-color: var(--red); grid-column: 1 / 3; font-size: clamp(2rem, 8vw, 3rem); }
-        .remote-btn.primary:active { background: #c22e3b; }
-        .remote-btn.secondary { background: var(--blue); color: #fff; border-color: var(--blue); }
-        .remote-btn.ghost { background: transparent; border-color: rgba(245, 243, 236, 0.15); }
+      .remote-controls {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 2fr 1fr 1fr;
+        gap: 0.8rem;
+        margin-top: 1rem;
+      }
+      .remote-btn {
+        font-family: var(--font-display);
+        font-size: clamp(1.4rem, 6vw, 2.2rem);
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        background: #1f2230;
+        color: var(--bg);
+        border: 2px solid rgba(245, 243, 236, 0.08);
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: transform 0.12s ease, background 0.12s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4em;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+      .remote-btn:active {
+        transform: scale(0.97);
+        background: #2a2f42;
+      }
+      .remote-btn.primary {
+        background: var(--red);
+        color: #fff;
+        border-color: var(--red);
+        grid-column: 1 / 3;
+        font-size: clamp(2rem, 8vw, 3rem);
+      }
+      .remote-btn.primary:active {
+        background: #c22e3b;
+      }
+      .remote-btn.secondary {
+        background: var(--blue);
+        color: #fff;
+        border-color: var(--blue);
+      }
+      .remote-btn.ghost {
+        background: transparent;
+        border-color: rgba(245, 243, 236, 0.15);
+      }
 
-        .remote-footer { font-family: var(--font-mono); font-size: 0.7rem; color: rgba(245, 243, 236, 0.35); text-align: center; }
+      .remote-footer {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        color: rgba(245, 243, 236, 0.35);
+        text-align: center;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="progress-bar" id="progressBar"></div>
-    <div class="remote-pin" id="remotePin"><span class="dot"></span><span class="txt">offline</span></div>
-    <div class="kbd-hint"><kbd>←</kbd> <kbd>→</kbd> · <kbd>Space</kbd> · <kbd>F</kbd></div>
+    <div class="remote-pin" id="remotePin">
+      <span class="dot"></span><span class="txt">offline</span>
+    </div>
+    <div class="kbd-hint">
+      <kbd>←</kbd> <kbd>→</kbd> · <kbd>Space</kbd> · <kbd>F</kbd>
+    </div>
 
     <!-- ============================================================
          SLIDE 1 — TITLE
          ============================================================ -->
     <section class="slide title-slide" data-title="Title">
-        <span class="slide-number">01 / 16</span>
-        <span class="slide-tag">DEVE427 · 2026</span>
+      <span class="slide-number">01 / 17</span>
+      <span class="slide-tag">DEVE427 · 2026</span>
 
-        <div class="brand-mark reveal">
-            <span class="dot"></span>
-            <span class="name">Tierce Maintenance Applicative</span>
-        </div>
+      <div class="brand-mark reveal">
+        <span class="dot"></span>
+        <span class="name">Tierce Maintenance Applicative</span>
+      </div>
 
-        <div class="slide-content" style="justify-content: flex-end;">
-            <h1 class="reveal">Fork<br>taxonomy<span class="accent">.</span><span class="sub">Un trimestre de maintenance sur un projet open-source Next.js 13.</span></h1>
+      <div class="slide-content" style="justify-content: flex-end">
+        <h1 class="reveal">
+          Fork<br />taxonomy<span class="accent">.</span
+          ><span class="sub"
+            >Projet de maintenance sur un projet open-source en Next.js
+            13.</span
+          >
+        </h1>
 
-            <div class="title-meta reveal">
-                <div class="team">
-                    <strong>Maxime Mansiet · Grégoire Lefèvre · Mael Bourdin</strong>
-                    <span>Cours DEVE427 — avril 2026</span>
-                    <span>Fork de shadcn-ui/taxonomy</span>
-                </div>
-                <div class="title-qr" id="titleQr">
-                    <canvas id="qrCanvas"></canvas>
-                    <div class="label"><span class="pulse"></span>Télécommande</div>
-                </div>
+        <div class="title-meta reveal">
+          <div class="team">
+            <strong>Maxime Mansiet · Grégoire Lefèvre · Mael Bourdin</strong>
+            <span>Cours DEVE427 — avril 2026</span>
+            <span>Fork de shadcn-ui/taxonomy</span>
+          </div>
+          <div class="title-qr" id="titleQr">
+            <div id="qrCanvas" class="qr-target"></div>
+            <div class="label">
+              <span class="pulse"></span>Télécommande
+              <span class="hint">scanner · même Wi-Fi</span>
             </div>
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 2 — TEAM
          ============================================================ -->
     <section class="slide" data-title="Équipe">
-        <span class="slide-number">02 / 16</span>
-        <span class="slide-tag">L'équipe</span>
+      <span class="slide-number">02 / 17</span>
+      <span class="slide-tag">L'équipe</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Trois membres · Rôles MOE distincts</span>
-                <h2 style="margin-top: 0.5em;">Un triangle de revue où personne ne valide ses propres fixes.</h2>
-            </div>
-
-            <div class="team-grid reveal">
-                <article class="team-card" data-role="mm">
-                    <span class="initials">MM</span>
-                    <div>
-                        <div class="name">Maxime Mansiet</div>
-                        <div class="role">Chef de projet · Tech Lead</div>
-                    </div>
-                    <p>Architecture, revue de code, suivi qualité. Prend les fixes critiques et les bugs de <code>page.tsx</code>.</p>
-                    <div class="tickets"><strong>6 tickets</strong> — KAN-4, 11, 12, 21, 22, 23</div>
-                </article>
-
-                <article class="team-card" data-role="gl">
-                    <span class="initials">GL</span>
-                    <div>
-                        <div class="name">Grégoire Lefèvre</div>
-                        <div class="role">Refactoring · Performance</div>
-                    </div>
-                    <p>Nettoie le cluster nav : remplace les <code>key={index}</code> par des identifiants stables sur <em>tous</em> les composants nav.</p>
-                    <div class="tickets"><strong>7 tickets</strong> — KAN-5, 6, 7, 8, 9, 10, 13</div>
-                </article>
-
-                <article class="team-card" data-role="mb">
-                    <span class="initials">MB</span>
-                    <div>
-                        <div class="name">Mael Bourdin</div>
-                        <div class="role">Qualité · Sécurité</div>
-                    </div>
-                    <p>Supprime les imports morts, résout les <code>TODO</code> à enjeu sécurité, exécute SonarQube, valide la chaîne.</p>
-                    <div class="tickets"><strong>7 tickets</strong> — KAN-14 à KAN-20</div>
-                </article>
-            </div>
-
-            <div class="reveal" style="font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted);">
-                Circuit de revue : <strong style="color: var(--red)">MM</strong> → <strong style="color: var(--blue)">GL</strong> → <strong style="color: var(--green)">MB</strong> → <strong style="color: var(--red)">MM</strong>. Validation obligatoire par un pair.
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Trois membres · Rôles MOE distincts</span>
+          <h2 style="margin-top: 0.5em">
+            Un triangle de revue où personne ne valide ses propres fixes.
+          </h2>
         </div>
+
+        <div class="team-grid reveal">
+          <article class="team-card" data-role="mm">
+            <span class="initials">MM</span>
+            <div>
+              <div class="name">Maxime Mansiet</div>
+              <div class="role">Chef de projet · Tech Lead</div>
+            </div>
+            <p>
+              Architecture, revue de code, suivi qualité. Prend les fixes
+              critiques et les bugs de <code>page.tsx</code>.
+            </p>
+            <div class="tickets">
+              <strong>6 tickets</strong> — KAN-4, 11, 12, 21, 22, 23
+            </div>
+          </article>
+
+          <article class="team-card" data-role="gl">
+            <span class="initials">GL</span>
+            <div>
+              <div class="name">Grégoire Lefèvre</div>
+              <div class="role">Refactoring · Performance</div>
+            </div>
+            <p>
+              Nettoie le cluster nav : remplace les <code>key={index}</code> par
+              des identifiants stables sur <em>tous</em> les composants nav.
+            </p>
+            <div class="tickets">
+              <strong>7 tickets</strong> — KAN-5, 6, 7, 8, 9, 10, 13
+            </div>
+          </article>
+
+          <article class="team-card" data-role="mb">
+            <span class="initials">MB</span>
+            <div>
+              <div class="name">Mael Bourdin</div>
+              <div class="role">Qualité · Sécurité</div>
+            </div>
+            <p>
+              Supprime les imports morts, résout les <code>TODO</code> à enjeu
+              sécurité, exécute SonarQube, valide la chaîne.
+            </p>
+            <div class="tickets">
+              <strong>7 tickets</strong> — KAN-14 à KAN-20
+            </div>
+          </article>
+        </div>
+
+        <div
+          class="reveal"
+          style="
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--muted);
+          "
+        >
+          Circuit de revue : <strong style="color: var(--red)">MM</strong> →
+          <strong style="color: var(--blue)">GL</strong> →
+          <strong style="color: var(--green)">MB</strong> →
+          <strong style="color: var(--red)">MM</strong>. Validation obligatoire
+          par un pair.
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 3 — SECTION DIVIDER: Atelier 1
          ============================================================ -->
     <section class="slide section-intro" data-title="Atelier 1">
-        <span class="slide-number">03 / 16</span>
-        <span class="slide-tag">Chapitre · Atelier 1</span>
+      <span class="slide-number">03 / 17</span>
+      <span class="slide-tag">Chapitre · Atelier 1</span>
 
-        <div class="slide-content" style="gap: 0;">
-            <span class="kicker reveal">Atelier 1</span>
-            <div class="num reveal">01</div>
-            <h2 class="reveal">Choix du projet<br>&amp; périmètre</h2>
-        </div>
+      <div class="slide-content" style="gap: 0">
+        <span class="kicker reveal">Atelier 1</span>
+        <div class="num reveal">01</div>
+        <h2 class="reveal">Choix du projet<br />&amp; périmètre</h2>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 4 — ATELIER 1: CHOIX DU PROJET
          ============================================================ -->
     <section class="slide" data-title="Atelier 1 · Projet">
-        <span class="slide-number">04 / 16</span>
-        <span class="slide-tag">Atelier 1</span>
+      <span class="slide-number">04 / 17</span>
+      <span class="slide-tag">Atelier 1</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Atelier 1 · Étape 1</span>
-                <h2 style="margin-top: 0.4em;">Pourquoi <span style="color: var(--blue)">shadcn-ui/taxonomy</span> ?</h2>
-            </div>
-
-            <div class="two-col wider-left reveal">
-                <div class="col">
-                    <p>Une application <strong>Next.js 13 App Router</strong> complète : Server Components, MDX via Contentlayer, NextAuth, Prisma, Stripe. Un monorepo réel, production-grade, abandonné depuis 18 mois — parfait terrain de maintenance.</p>
-                    <ul class="bullets" style="margin-top: clamp(0.5rem, 1.2vw, 1rem);">
-                        <li><strong>Licence MIT</strong> — Open-source, fork sans friction.</li>
-                        <li><strong>App web + API routes</strong> — Lisible pour un audit.</li>
-                        <li><strong>Aucun test avant le fork</strong> — Justifie la mission Atelier 3.</li>
-                        <li><strong>15 dossiers métier, 100+ composants, centaines de commits</strong>.</li>
-                    </ul>
-                </div>
-                <div class="col">
-                    <table class="data">
-                        <thead><tr><th>Critère</th><th>Statut</th></tr></thead>
-                        <tbody>
-                            <tr><td>Open source (MIT)</td><td><span class="chip green">OK</span></td></tr>
-                            <tr><td>Application web + API</td><td><span class="chip green">OK</span></td></tr>
-                            <tr><td>Exécutable localement</td><td><span class="chip green">OK</span></td></tr>
-                            <tr><td>Tests quasi inexistants</td><td><span class="chip green">OK</span></td></tr>
-                            <tr><td>Projet inactif</td><td><span class="chip green">OK</span></td></tr>
-                            <tr><td>Plusieurs dizaines de fichiers</td><td><span class="chip green">OK</span></td></tr>
-                            <tr><td>Historique Git riche</td><td><span class="chip green">OK</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Atelier 1 · Étape 1</span>
+          <h2 style="margin-top: 0.4em">
+            Pourquoi
+            <span style="color: var(--blue)">shadcn-ui/taxonomy</span> ?
+          </h2>
         </div>
+
+        <div class="two-col wider-left reveal">
+          <div class="col">
+            <p>
+              Une application <strong>Next.js 13 App Router</strong> complète :
+              Server Components, MDX via Contentlayer, NextAuth, Prisma, Stripe.
+              Un monorepo réel, production-grade, abandonné depuis 18 mois —
+              parfait terrain de maintenance.
+            </p>
+            <ul class="bullets" style="margin-top: clamp(0.5rem, 1.2vw, 1rem)">
+              <li>
+                <strong>Licence MIT</strong> — Open-source, fork sans friction.
+              </li>
+              <li>
+                <strong>App web + API routes</strong> — Lisible pour un audit.
+              </li>
+              <li>
+                <strong>Aucun test avant le fork</strong> — Justifie la mission
+                Atelier 3.
+              </li>
+              <li>
+                <strong
+                  >15 dossiers métier, 100+ composants, centaines de
+                  commits</strong
+                >.
+              </li>
+            </ul>
+          </div>
+          <div class="col">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Critère</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Open source (MIT)</td>
+                  <td><span class="chip green">OK</span></td>
+                </tr>
+                <tr>
+                  <td>Application web + API</td>
+                  <td><span class="chip green">OK</span></td>
+                </tr>
+                <tr>
+                  <td>Exécutable localement</td>
+                  <td><span class="chip green">OK</span></td>
+                </tr>
+                <tr>
+                  <td>Tests quasi inexistants</td>
+                  <td><span class="chip green">OK</span></td>
+                </tr>
+                <tr>
+                  <td>Projet inactif</td>
+                  <td><span class="chip green">OK</span></td>
+                </tr>
+                <tr>
+                  <td>Plusieurs dizaines de fichiers</td>
+                  <td><span class="chip green">OK</span></td>
+                </tr>
+                <tr>
+                  <td>Historique Git riche</td>
+                  <td><span class="chip green">OK</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 5 — ATELIER 1: PÉRIMÈTRE
          ============================================================ -->
     <section class="slide" data-title="Atelier 1 · Périmètre">
-        <span class="slide-number">05 / 16</span>
-        <span class="slide-tag">Atelier 1</span>
+      <span class="slide-number">05 / 17</span>
+      <span class="slide-tag">Atelier 1</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Atelier 1 · Étape 2</span>
-                <h2 style="margin-top: 0.4em;">Six axes de maintenance.</h2>
-            </div>
-
-            <table class="data reveal">
-                <thead>
-                    <tr>
-                        <th style="width: 22%">Axe</th>
-                        <th>Engagements du fork</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Stabilité</strong></td>
-                        <td>Corriger <code>var</code> globaux + expressions sans effet (<code>page.tsx</code>) qui provoquent des comportements non déterministes. Rendre <code>NEXTAUTH_URL</code> optionnel pour éviter les crashs preview Vercel.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Performance</strong></td>
-                        <td>Supprimer les composants définis en plein render (<code>calendar.tsx</code>), remplacer les <code>key={index}</code> par des identifiants stables dans toutes les nav.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Sécurité</strong></td>
-                        <td>Lever les <code>TODO</code> de <code>subscription.ts</code>, <code>route.ts</code>, <code>post.ts</code>. Valider les secrets au build via <code>@t3-oss/env-nextjs</code>.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Ergonomie &amp; a11y</strong></td>
-                        <td>Non-régression des parcours nav (desktop + mobile) via tests Playwright.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Anomalies</strong></td>
-                        <td>Returns manquants dans <code>getXFromParams</code>, assertion de type inutile, imports inutilisés.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Fonctionnalités</strong></td>
-                        <td>Mise en place d'une <strong>chaîne de qualité</strong> (SonarQube + Jira + Playwright) là où il n'en existait aucune.</td>
-                    </tr>
-                </tbody>
-            </table>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Atelier 1 · Étape 2</span>
+          <h2 style="margin-top: 0.4em">Six axes de maintenance.</h2>
         </div>
+
+        <table class="data reveal">
+          <thead>
+            <tr>
+              <th style="width: 22%">Axe</th>
+              <th>Engagements du fork</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Stabilité</strong></td>
+              <td>
+                Corriger <code>var</code> globaux + expressions sans effet
+                (<code>page.tsx</code>) qui provoquent des comportements non
+                déterministes. Rendre <code>NEXTAUTH_URL</code> optionnel pour
+                éviter les crashs preview Vercel.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Performance</strong></td>
+              <td>
+                Supprimer les composants définis en plein render
+                (<code>calendar.tsx</code>), remplacer les
+                <code>key={index}</code> par des identifiants stables dans
+                toutes les nav.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Sécurité</strong></td>
+              <td>
+                Lever les <code>TODO</code> de <code>subscription.ts</code>,
+                <code>route.ts</code>, <code>post.ts</code>. Valider les secrets
+                au build via <code>@t3-oss/env-nextjs</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Ergonomie &amp; a11y</strong></td>
+              <td>
+                Non-régression des parcours nav (desktop + mobile) via tests
+                Playwright.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Anomalies</strong></td>
+              <td>
+                Returns manquants dans <code>getXFromParams</code>, assertion de
+                type inutile, imports inutilisés.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Fonctionnalités</strong></td>
+              <td>
+                Mise en place d'une
+                <strong>chaîne de qualité</strong> (SonarQube + Jira +
+                Playwright) là où il n'en existait aucune.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 6 — SECTION DIVIDER: Atelier 2
          ============================================================ -->
     <section class="slide section-intro" data-title="Atelier 2">
-        <span class="slide-number">06 / 16</span>
-        <span class="slide-tag">Chapitre · Atelier 2</span>
+      <span class="slide-number">06 / 17</span>
+      <span class="slide-tag">Chapitre · Atelier 2</span>
 
-        <div class="slide-content" style="gap: 0;">
-            <span class="kicker reveal">Atelier 2</span>
-            <div class="num reveal">02</div>
-            <h2 class="reveal">Outils de suivi</h2>
-        </div>
+      <div class="slide-content" style="gap: 0">
+        <span class="kicker reveal">Atelier 2</span>
+        <div class="num reveal">02</div>
+        <h2 class="reveal">Outils de suivi</h2>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 7 — JIRA WORKFLOW
          ============================================================ -->
     <section class="slide" data-title="Atelier 2 · Jira">
-        <span class="slide-number">07 / 16</span>
-        <span class="slide-tag">Atelier 2 · Étape 1</span>
+      <span class="slide-number">07 / 17</span>
+      <span class="slide-tag">Atelier 2 · Étape 1</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Workflow Jira personnalisé</span>
-                <h2 style="margin-top: 0.4em;">Une étape de revue <span style="color: var(--red)">obligatoire</span> par un pair.</h2>
-            </div>
-
-            <div class="workflow reveal">
-                <span class="state">À faire</span>
-                <span class="arrow">→</span>
-                <span class="state active">En cours</span>
-                <span class="arrow forbidden">╳</span>
-                <span class="state done">Terminé</span>
-            </div>
-            <div class="workflow reveal" style="margin-top: -0.8rem;">
-                <span class="state">À faire</span>
-                <span class="arrow">→</span>
-                <span class="state active">En cours</span>
-                <span class="arrow">→</span>
-                <span class="state" style="background: var(--yellow); border-color: var(--yellow); color: var(--ink);">En cours de revue</span>
-                <span class="arrow">→</span>
-                <span class="state done">Terminé</span>
-            </div>
-
-            <div class="reveal" style="display: grid; grid-template-columns: 1fr 1fr; gap: clamp(0.8rem, 2vw, 2rem); margin-top: clamp(0.6rem, 1.5vw, 1.2rem);">
-                <div>
-                    <span class="chip red">Règle 1</span>
-                    <p style="margin-top: 0.5em;">La transition directe <code>En cours → Terminé</code> est désactivée. Impossible de court-circuiter la revue.</p>
-                </div>
-                <div>
-                    <span class="chip blue">Règle 2</span>
-                    <p style="margin-top: 0.5em;"><code>En cours de revue</code> matérialise la validation par un pair. Le chef de projet valide les fixes du responsable refactoring, et inversement.</p>
-                </div>
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Workflow Jira personnalisé</span>
+          <h2 style="margin-top: 0.4em">
+            Une étape de revue
+            <span style="color: var(--red)">obligatoire</span> par un pair.
+          </h2>
         </div>
+
+        <div class="workflow reveal">
+          <span class="state">À faire</span>
+          <span class="arrow">→</span>
+          <span class="state active">En cours</span>
+          <span class="arrow forbidden">╳</span>
+          <span class="state done">Terminé</span>
+        </div>
+        <div class="workflow reveal" style="margin-top: -0.8rem">
+          <span class="state">À faire</span>
+          <span class="arrow">→</span>
+          <span class="state active">En cours</span>
+          <span class="arrow">→</span>
+          <span
+            class="state"
+            style="
+              background: var(--yellow);
+              border-color: var(--yellow);
+              color: var(--ink);
+            "
+            >En cours de revue</span
+          >
+          <span class="arrow">→</span>
+          <span class="state done">Terminé</span>
+        </div>
+
+        <div
+          class="reveal"
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(0.8rem, 2vw, 2rem);
+            margin-top: clamp(0.6rem, 1.5vw, 1.2rem);
+          "
+        >
+          <div>
+            <span class="chip red">Règle 1</span>
+            <p style="margin-top: 0.5em">
+              La transition directe <code>En cours → Terminé</code> est
+              désactivée. Impossible de court-circuiter la revue.
+            </p>
+          </div>
+          <div>
+            <span class="chip blue">Règle 2</span>
+            <p style="margin-top: 0.5em">
+              <code>En cours de revue</code> matérialise la validation par un
+              pair. Le chef de projet valide les fixes du responsable
+              refactoring, et inversement.
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================
-         SLIDE 8 — JIRA SCREENSHOT
+         SLIDE 8 — JIRA AUTOMATION (commit → en cours)
+         ============================================================ -->
+    <section class="slide" data-title="Atelier 2 · Automation Jira">
+      <span class="slide-number">08 / 17</span>
+      <span class="slide-tag">Atelier 2 · Étape 1 · complément</span>
+
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker"
+            >Jira Automation · règle configurée par Mael Bourdin</span
+          >
+          <h2 style="margin-top: 0.4em">
+            Un commit apparaît — le ticket passe
+            <span style="color: var(--blue)">En cours</span> tout seul.
+          </h2>
+        </div>
+
+        <div
+          class="reveal"
+          style="display: flex; gap: 0.5em; flex-wrap: wrap; align-items: center;"
+        >
+          <span class="chip blue">WHEN · commit created</span>
+          <span class="chip ghost">IF · status = « À faire »</span>
+          <span class="chip red">THEN · transition → En cours</span>
+          <span class="chip">Owner MB · Actor Automation for Jira</span>
+        </div>
+
+        <div class="screenshot reveal">
+          <img
+            src="assets/jira-automation-commit.png"
+            alt="Règle Jira Automation : quand un commit est créé, transitionner le ticket en En cours"
+          />
+        </div>
+
+        <p
+          class="reveal"
+          style="
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--muted);
+          "
+        >
+          Effet concret : le board reflète l'état réel du dépôt sans transition
+          manuelle oubliée. Couplée à la convention
+          <code>fix(KAN-X):&nbsp;…</code>, chaque commit tracé déclenche la
+          bonne transition.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SLIDE 9 — JIRA SCREENSHOT
          ============================================================ -->
     <section class="slide" data-title="Atelier 2 · Board Jira">
-        <span class="slide-number">08 / 16</span>
-        <span class="slide-tag">Atelier 2 · Preuve</span>
+      <span class="slide-number">09 / 17</span>
+      <span class="slide-tag">Atelier 2 · Preuve</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Jira Kanban · Projet KAN</span>
-                <h2 style="margin-top: 0.4em;">20 tickets, 20 en <span style="color: var(--green)">Terminé</span>.</h2>
-            </div>
-
-            <div class="screenshot reveal">
-                <img src="assets/jira-workflow.png" alt="Board Jira avec les 20 tickets en statut Terminé">
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Jira Kanban · Projet KAN</span>
+          <h2 style="margin-top: 0.4em">
+            20 tickets, 20 en <span style="color: var(--green)">Terminé</span>.
+          </h2>
         </div>
+
+        <div class="screenshot reveal">
+          <img
+            src="assets/jira-workflow.png"
+            alt="Board Jira avec les 20 tickets en statut Terminé"
+          />
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 9 — SONARQUBE RULES TABLE
          ============================================================ -->
     <section class="slide" data-title="Atelier 2 · SonarQube">
-        <span class="slide-number">09 / 16</span>
-        <span class="slide-tag">Atelier 2 · Étape 2</span>
+      <span class="slide-number">10 / 17</span>
+      <span class="slide-tag">Atelier 2 · Étape 2</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Analyse SonarQube · LTS 9.9 Community · Docker local</span>
-                <h2 style="margin-top: 0.4em;">24 issues détectées, regroupées en 20 tickets Jira.</h2>
-            </div>
-
-            <table class="data reveal">
-                <thead>
-                    <tr>
-                        <th>Sévérité</th>
-                        <th>Règle Sonar</th>
-                        <th style="text-align: right;">Issues</th>
-                        <th style="text-align: right;">Tickets</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td><span class="sev critical">Critical</span></td><td class="mono">S3504</td><td class="mono" style="text-align: right;">1</td><td class="mono" style="text-align: right;">1</td><td><code>var</code> global dans <code>db.ts</code></td></tr>
-                    <tr><td><span class="sev major">Major</span></td><td class="mono">S6479</td><td class="mono" style="text-align: right;">6</td><td class="mono" style="text-align: right;">6</td><td><code>key={index}</code> dans les listes React (nav, sidebar, toc, mobile, main)</td></tr>
-                    <tr><td><span class="sev major">Major</span></td><td class="mono">S6478</td><td class="mono" style="text-align: right;">2</td><td class="mono" style="text-align: right;">2</td><td>Composant défini pendant le render (calendar)</td></tr>
-                    <tr><td><span class="sev major">Major</span></td><td class="mono">S905</td><td class="mono" style="text-align: right;">3</td><td class="mono" style="text-align: right;">3</td><td>Expressions sans effet / return manquant</td></tr>
-                    <tr><td><span class="sev minor">Minor</span></td><td class="mono">S1128</td><td class="mono" style="text-align: right;">7</td><td class="mono" style="text-align: right;">3</td><td>Imports inutilisés (groupés par fichier)</td></tr>
-                    <tr><td><span class="sev minor">Minor</span></td><td class="mono">S4325</td><td class="mono" style="text-align: right;">1</td><td class="mono" style="text-align: right;">1</td><td>Assertion de type superflue</td></tr>
-                    <tr><td><span class="sev info">Info</span></td><td class="mono">S1135</td><td class="mono" style="text-align: right;">4</td><td class="mono" style="text-align: right;">4</td><td>Commentaires <code>TODO</code> non résolus</td></tr>
-                    <tr class="total"><td colspan="2">Total</td><td class="mono" style="text-align: right;">24</td><td class="mono" style="text-align: right;">20</td><td></td></tr>
-                </tbody>
-            </table>
-
-            <p class="reveal" style="font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted);">
-                <strong style="color: var(--ink)">Écart 24 → 20 :</strong> la règle S1128 (imports inutilisés) a été traitée en un ticket par fichier impacté plutôt qu'en un ticket par import, pour qu'un seul commit résolve le ticket.
-            </p>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker"
+            >Analyse SonarQube · LTS 9.9 Community · Docker local</span
+          >
+          <h2 style="margin-top: 0.4em">
+            24 issues détectées, regroupées en 20 tickets Jira.
+          </h2>
         </div>
+
+        <table class="data reveal">
+          <thead>
+            <tr>
+              <th>Sévérité</th>
+              <th>Règle Sonar</th>
+              <th style="text-align: right">Issues</th>
+              <th style="text-align: right">Tickets</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="sev critical">Critical</span></td>
+              <td class="mono">S3504</td>
+              <td class="mono" style="text-align: right">1</td>
+              <td class="mono" style="text-align: right">1</td>
+              <td><code>var</code> global dans <code>db.ts</code></td>
+            </tr>
+            <tr>
+              <td><span class="sev major">Major</span></td>
+              <td class="mono">S6479</td>
+              <td class="mono" style="text-align: right">6</td>
+              <td class="mono" style="text-align: right">6</td>
+              <td>
+                <code>key={index}</code> dans les listes React (nav, sidebar,
+                toc, mobile, main)
+              </td>
+            </tr>
+            <tr>
+              <td><span class="sev major">Major</span></td>
+              <td class="mono">S6478</td>
+              <td class="mono" style="text-align: right">2</td>
+              <td class="mono" style="text-align: right">2</td>
+              <td>Composant défini pendant le render (calendar)</td>
+            </tr>
+            <tr>
+              <td><span class="sev major">Major</span></td>
+              <td class="mono">S905</td>
+              <td class="mono" style="text-align: right">3</td>
+              <td class="mono" style="text-align: right">3</td>
+              <td>Expressions sans effet / return manquant</td>
+            </tr>
+            <tr>
+              <td><span class="sev minor">Minor</span></td>
+              <td class="mono">S1128</td>
+              <td class="mono" style="text-align: right">7</td>
+              <td class="mono" style="text-align: right">3</td>
+              <td>Imports inutilisés (groupés par fichier)</td>
+            </tr>
+            <tr>
+              <td><span class="sev minor">Minor</span></td>
+              <td class="mono">S4325</td>
+              <td class="mono" style="text-align: right">1</td>
+              <td class="mono" style="text-align: right">1</td>
+              <td>Assertion de type superflue</td>
+            </tr>
+            <tr>
+              <td><span class="sev info">Info</span></td>
+              <td class="mono">S1135</td>
+              <td class="mono" style="text-align: right">4</td>
+              <td class="mono" style="text-align: right">4</td>
+              <td>Commentaires <code>TODO</code> non résolus</td>
+            </tr>
+            <tr class="total">
+              <td colspan="2">Total</td>
+              <td class="mono" style="text-align: right">24</td>
+              <td class="mono" style="text-align: right">20</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p
+          class="reveal"
+          style="
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--muted);
+          "
+        >
+          <strong style="color: var(--ink)">Écart 24 → 20 :</strong> la règle
+          S1128 (imports inutilisés) a été traitée en un ticket par fichier
+          impacté plutôt qu'en un ticket par import, pour qu'un seul commit
+          résolve le ticket.
+        </p>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 10 — SONARQUBE SCREENSHOT
          ============================================================ -->
     <section class="slide" data-title="Atelier 2 · SonarQube Pass">
-        <span class="slide-number">10 / 16</span>
-        <span class="slide-tag">Atelier 2 · Preuve</span>
+      <span class="slide-number">11 / 17</span>
+      <span class="slide-tag">Atelier 2 · Preuve</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">SonarQube · après les 20 fixes</span>
-                <h2 style="margin-top: 0.4em;">Quality Gate <span style="color: var(--green)">Passed</span>.</h2>
-            </div>
-
-            <div class="screenshot reveal">
-                <img src="assets/sonarqube-dashboard.png" alt="Dashboard SonarQube post-correction · Quality Gate Passed">
-            </div>
-
-            <p class="reveal" style="font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted);">
-                Capture prise <strong style="color: var(--ink)">après</strong> les commits <code>fix(KAN-X)</code>. L'analyse initiale (avant fixes) a servi à créer les 20 tickets. Le script <code>scripts/screenshot-sonar.mjs</code> reproduit la capture à la demande.
-            </p>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">SonarQube · après les 20 fixes</span>
+          <h2 style="margin-top: 0.4em">
+            Quality Gate <span style="color: var(--green)">Passed</span>.
+          </h2>
         </div>
+
+        <div class="screenshot reveal">
+          <img
+            src="assets/sonarqube-dashboard.png"
+            alt="Dashboard SonarQube post-correction · Quality Gate Passed"
+          />
+        </div>
+
+        <p
+          class="reveal"
+          style="
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--muted);
+          "
+        >
+          Capture prise <strong style="color: var(--ink)">après</strong> les
+          commits <code>fix(KAN-X)</code>. L'analyse initiale (avant fixes) a
+          servi à créer les 20 tickets. Le script
+          <code>scripts/screenshot-sonar.mjs</code> reproduit la capture à la
+          demande.
+        </p>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 11 — TICKET DISTRIBUTION
          ============================================================ -->
     <section class="slide" data-title="Atelier 2 · Répartition">
-        <span class="slide-number">11 / 16</span>
-        <span class="slide-tag">Atelier 2 · Étape 3</span>
+      <span class="slide-number">12 / 17</span>
+      <span class="slide-tag">Atelier 2 · Étape 3</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Répartition des 20 tickets · équilibrée 6 / 7 / 7</span>
-                <h2 style="margin-top: 0.4em;">Chacun porte une responsabilité distincte.</h2>
-            </div>
-
-            <div class="reveal" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(0.8rem, 2vw, 2rem);">
-                <div class="team-card" data-role="mm">
-                    <span class="initials" style="font-size: clamp(1.6rem, 4vw, 2.8rem);">6</span>
-                    <div class="name">Maxime Mansiet</div>
-                    <div class="role">Critical / High</div>
-                    <p class="mono" style="font-size: var(--small-size);">KAN-4 (<code>var</code>), KAN-11, KAN-12 (calendar), KAN-21, KAN-22, KAN-23 (bugs <code>page.tsx</code>)</p>
-                </div>
-                <div class="team-card" data-role="gl">
-                    <span class="initials" style="font-size: clamp(1.6rem, 4vw, 2.8rem);">7</span>
-                    <div class="name">Grégoire Lefèvre</div>
-                    <div class="role">Major · Performance</div>
-                    <p class="mono" style="font-size: var(--small-size);">KAN-5 à 10 (nav <code>key={index}</code>), KAN-13 (imports <code>page.tsx</code>)</p>
-                </div>
-                <div class="team-card" data-role="mb">
-                    <span class="initials" style="font-size: clamp(1.6rem, 4vw, 2.8rem);">7</span>
-                    <div class="name">Mael Bourdin</div>
-                    <div class="role">Minor · Info · Sécurité</div>
-                    <p class="mono" style="font-size: var(--small-size);">KAN-14, 15, 16 (imports, assertion), KAN-17 à 20 (<code>TODO</code>)</p>
-                </div>
-            </div>
-
-            <div class="reveal" style="font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted); border-top: 1px dashed var(--rule); padding-top: clamp(0.5rem, 1.2vw, 1rem);">
-                Chaque commit porte la clé du ticket (<code>fix(KAN-X):</code>) — traçabilité Git ↔ Jira garantie.
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker"
+            >Répartition des 20 tickets · équilibrée 6 / 7 / 7</span
+          >
+          <h2 style="margin-top: 0.4em">
+            Chacun porte une responsabilité distincte.
+          </h2>
         </div>
+
+        <div
+          class="reveal"
+          style="
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(0.8rem, 2vw, 2rem);
+          "
+        >
+          <div class="team-card" data-role="mm">
+            <span class="initials" style="font-size: clamp(1.6rem, 4vw, 2.8rem)"
+              >6</span
+            >
+            <div class="name">Maxime Mansiet</div>
+            <div class="role">Critical / High</div>
+            <p class="mono" style="font-size: var(--small-size)">
+              KAN-4 (<code>var</code>), KAN-11, KAN-12 (calendar), KAN-21,
+              KAN-22, KAN-23 (bugs <code>page.tsx</code>)
+            </p>
+          </div>
+          <div class="team-card" data-role="gl">
+            <span class="initials" style="font-size: clamp(1.6rem, 4vw, 2.8rem)"
+              >7</span
+            >
+            <div class="name">Grégoire Lefèvre</div>
+            <div class="role">Major · Performance</div>
+            <p class="mono" style="font-size: var(--small-size)">
+              KAN-5 à 10 (nav <code>key={index}</code>), KAN-13 (imports
+              <code>page.tsx</code>)
+            </p>
+          </div>
+          <div class="team-card" data-role="mb">
+            <span class="initials" style="font-size: clamp(1.6rem, 4vw, 2.8rem)"
+              >7</span
+            >
+            <div class="name">Mael Bourdin</div>
+            <div class="role">Minor · Info · Sécurité</div>
+            <p class="mono" style="font-size: var(--small-size)">
+              KAN-14, 15, 16 (imports, assertion), KAN-17 à 20
+              (<code>TODO</code>)
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="reveal"
+          style="
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--muted);
+            border-top: 1px dashed var(--rule);
+            padding-top: clamp(0.5rem, 1.2vw, 1rem);
+          "
+        >
+          Chaque commit porte la clé du ticket (<code>fix(KAN-X):</code>) —
+          traçabilité Git ↔ Jira garantie.
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 12 — FIX EXAMPLE (code before/after)
          ============================================================ -->
     <section class="slide" data-title="Atelier 2 · Exemple de fix">
-        <span class="slide-number">12 / 16</span>
-        <span class="slide-tag">Atelier 2 · Étape 3</span>
+      <span class="slide-number">13 / 17</span>
+      <span class="slide-tag">Atelier 2 · Étape 3</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Exemple · KAN-4 · CRITICAL · règle S3504</span>
-                <h2 style="margin-top: 0.4em;">D'un <code>var</code> global à un cast <code>globalThis</code>.</h2>
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Exemple · KAN-4 · CRITICAL · règle S3504</span>
+          <h2 style="margin-top: 0.4em">
+            D'un <code>var</code> global à un cast <code>globalThis</code>.
+          </h2>
+        </div>
 
-            <div class="two-col reveal" style="align-items: stretch;">
-                <div class="col">
-                    <span class="chip red">Avant</span>
-                    <pre class="code" style="margin-top: 0.4em;"><span class="rm"><span class="kw">var</span> prisma: <span class="fn">PrismaClient</span></span>
+        <div class="two-col reveal" style="align-items: stretch">
+          <div class="col">
+            <span class="chip red">Avant</span>
+            <pre
+              class="code"
+              style="margin-top: 0.4em"
+            ><span class="rm"><span class="kw">var</span> prisma: <span class="fn">PrismaClient</span></span>
 
 <span class="kw">if</span> (process.env.<span class="fn">NODE_ENV</span> === <span class="str">"production"</span>) {
   prisma = <span class="kw">new</span> <span class="fn">PrismaClient</span>()
@@ -993,10 +1722,13 @@
   }
   prisma = global.prisma
 }</pre>
-                </div>
-                <div class="col">
-                    <span class="chip green">Après</span>
-                    <pre class="code" style="margin-top: 0.4em;"><span class="cm">// globalThis cast, pas de 'var'</span>
+          </div>
+          <div class="col">
+            <span class="chip green">Après</span>
+            <pre
+              class="code"
+              style="margin-top: 0.4em"
+            ><span class="cm">// globalThis cast, pas de 'var'</span>
 <span class="kw">const</span> globalForPrisma = globalThis <span class="kw">as</span> <span class="kw">unknown</span> <span class="kw">as</span> {
   prisma: PrismaClient
 }
@@ -1007,109 +1739,139 @@
 
 <span class="kw">if</span> (process.env.<span class="fn">NODE_ENV</span> !== <span class="str">"production"</span>)
   globalForPrisma.prisma = db</pre>
-                </div>
-            </div>
-
-            <div class="reveal" style="display: flex; gap: 1em; align-items: center; font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted); border-top: 1px dashed var(--rule); padding-top: clamp(0.5rem, 1.2vw, 1rem);">
-                <span class="chip ghost">commit <code style="color: var(--blue)">4fa4c07</code></span>
-                <span>→ SonarQube re-scan : issue S3504 disparaît.</span>
-            </div>
+          </div>
         </div>
+
+        <div
+          class="reveal"
+          style="
+            display: flex;
+            gap: 1em;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--muted);
+            border-top: 1px dashed var(--rule);
+            padding-top: clamp(0.5rem, 1.2vw, 1rem);
+          "
+        >
+          <span class="chip ghost"
+            >commit <code style="color: var(--blue)">4fa4c07</code></span
+          >
+          <span>→ SonarQube re-scan : issue S3504 disparaît.</span>
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 13 — SECTION DIVIDER: Atelier 3
          ============================================================ -->
     <section class="slide section-intro" data-title="Atelier 3">
-        <span class="slide-number">13 / 16</span>
-        <span class="slide-tag">Chapitre · Atelier 3</span>
+      <span class="slide-number">14 / 17</span>
+      <span class="slide-tag">Chapitre · Atelier 3</span>
 
-        <div class="slide-content" style="gap: 0;">
-            <span class="kicker reveal">Atelier 3</span>
-            <div class="num reveal">03</div>
-            <h2 class="reveal">Tests fonctionnels<br>&amp; non-régression</h2>
-        </div>
+      <div class="slide-content" style="gap: 0">
+        <span class="kicker reveal">Atelier 3</span>
+        <div class="num reveal">03</div>
+        <h2 class="reveal">Tests fonctionnels<br />&amp; non-régression</h2>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 14 — TEST PLAN
          ============================================================ -->
     <section class="slide" data-title="Atelier 3 · Plan de test">
-        <span class="slide-number">14 / 16</span>
-        <span class="slide-tag">Atelier 3 · Étape 1</span>
+      <span class="slide-number">15 / 17</span>
+      <span class="slide-tag">Atelier 3 · Étape 1</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Plan de test · TESTS.md</span>
-                <h2 style="margin-top: 0.4em;">Trois types de cas, mapping explicite vers les tickets.</h2>
-            </div>
-
-            <table class="data reveal">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Spec</th>
-                        <th>Couverture</th>
-                        <th>Non-régression</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="chip blue">Usuel</span></td>
-                        <td class="mono">home.spec.ts</td>
-                        <td>Accueil, nav desktop, liens principaux</td>
-                        <td>—</td>
-                    </tr>
-                    <tr>
-                        <td><span class="chip red">Non-régression</span></td>
-                        <td class="mono">navigation.spec.ts</td>
-                        <td>Clés stables dans nav/sidebar/toc/mobile</td>
-                        <td class="mono">KAN-5 à 10</td>
-                    </tr>
-                    <tr>
-                        <td><span class="chip red">Non-régression</span></td>
-                        <td class="mono">blog.spec.ts</td>
-                        <td>Toc + rendu MDX</td>
-                        <td class="mono">KAN-8</td>
-                    </tr>
-                    <tr>
-                        <td><span class="chip red">Non-régression</span></td>
-                        <td class="mono">docs.spec.ts</td>
-                        <td>Imports supprimés · rendu <code>page.tsx</code></td>
-                        <td class="mono">KAN-13..15, 21..23</td>
-                    </tr>
-                    <tr>
-                        <td><span class="chip blue">Extrême</span></td>
-                        <td class="mono">responsive.spec.ts</td>
-                        <td>Mobile Pixel 7 · ouverture/fermeture menu</td>
-                        <td class="mono">KAN-9</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <p class="reveal" style="font-family: var(--font-mono); font-size: var(--small-size); color: var(--muted);">
-                Cas d'erreur testés dans chaque spec : 404 explicite, viewport étroit, URL malformée.
-            </p>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Plan de test · TESTS.md</span>
+          <h2 style="margin-top: 0.4em">
+            Trois types de cas, mapping explicite vers les tickets.
+          </h2>
         </div>
+
+        <table class="data reveal">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Spec</th>
+              <th>Couverture</th>
+              <th>Non-régression</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="chip blue">Usuel</span></td>
+              <td class="mono">home.spec.ts</td>
+              <td>Accueil, nav desktop, liens principaux</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><span class="chip red">Non-régression</span></td>
+              <td class="mono">navigation.spec.ts</td>
+              <td>Clés stables dans nav/sidebar/toc/mobile</td>
+              <td class="mono">KAN-5 à 10</td>
+            </tr>
+            <tr>
+              <td><span class="chip red">Non-régression</span></td>
+              <td class="mono">blog.spec.ts</td>
+              <td>Toc + rendu MDX</td>
+              <td class="mono">KAN-8</td>
+            </tr>
+            <tr>
+              <td><span class="chip red">Non-régression</span></td>
+              <td class="mono">docs.spec.ts</td>
+              <td>Imports supprimés · rendu <code>page.tsx</code></td>
+              <td class="mono">KAN-13..15, 21..23</td>
+            </tr>
+            <tr>
+              <td><span class="chip blue">Extrême</span></td>
+              <td class="mono">responsive.spec.ts</td>
+              <td>Mobile Pixel 7 · ouverture/fermeture menu</td>
+              <td class="mono">KAN-9</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p
+          class="reveal"
+          style="
+            font-family: var(--font-mono);
+            font-size: var(--small-size);
+            color: var(--muted);
+          "
+        >
+          Cas d'erreur testés dans chaque spec : 404 explicite, viewport étroit,
+          URL malformée.
+        </p>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 15 — PLAYWRIGHT STACK
          ============================================================ -->
     <section class="slide" data-title="Atelier 3 · Stack">
-        <span class="slide-number">15 / 16</span>
-        <span class="slide-tag">Atelier 3 · Étape 2</span>
+      <span class="slide-number">16 / 17</span>
+      <span class="slide-tag">Atelier 3 · Étape 2</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Stack · Playwright + @playwright/test</span>
-                <h2 style="margin-top: 0.4em;">Deux projets : <span style="color: var(--blue)">desktop</span>, <span style="color: var(--red)">mobile Pixel 7</span>.</h2>
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Stack · Playwright + @playwright/test</span>
+          <h2 style="margin-top: 0.4em">
+            Deux projets : <span style="color: var(--blue)">desktop</span>,
+            <span style="color: var(--red)">mobile Pixel 7</span>.
+          </h2>
+        </div>
 
-            <div class="two-col reveal" style="align-items: stretch;">
-                <div class="col">
-                    <span class="chip ghost"><code>playwright.config.ts</code></span>
-                    <pre class="code" style="margin-top: 0.4em;"><span class="kw">import</span> { <span class="fn">defineConfig</span>, <span class="fn">devices</span> } <span class="kw">from</span> <span class="str">"@playwright/test"</span>
+        <div class="two-col reveal" style="align-items: stretch">
+          <div class="col">
+            <span class="chip ghost"><code>playwright.config.ts</code></span>
+            <pre
+              class="code"
+              style="margin-top: 0.4em"
+            ><span class="kw">import</span> { <span class="fn">defineConfig</span>, <span class="fn">devices</span> } <span class="kw">from</span> <span class="str">"@playwright/test"</span>
 
 <span class="kw">export default</span> <span class="fn">defineConfig</span>({
   testDir: <span class="str">"./tests"</span>,
@@ -1122,10 +1884,13 @@
   ],
   webServer: { command: <span class="str">"pnpm dev"</span>, url: baseURL }
 })</pre>
-                </div>
-                <div class="col">
-                    <span class="chip ghost">Lancer la suite</span>
-                    <pre class="code" style="margin-top: 0.4em;"><span class="cm"># 1. Dev server auto-lancé par Playwright</span>
+          </div>
+          <div class="col">
+            <span class="chip ghost">Lancer la suite</span>
+            <pre
+              class="code"
+              style="margin-top: 0.4em"
+            ><span class="cm"># 1. Dev server auto-lancé par Playwright</span>
 <span class="fn">pnpm</span> exec playwright test
 
 <span class="cm"># 2. Mode UI interactif</span>
@@ -1134,335 +1899,433 @@
 <span class="cm"># 3. Ouvrir le dernier rapport HTML</span>
 <span class="fn">pnpm</span> exec playwright show-report</pre>
 
-                    <div style="display: flex; gap: 0.4em; flex-wrap: wrap; margin-top: 0.5em;">
-                        <span class="chip">HTML report</span>
-                        <span class="chip">Trace on-retry</span>
-                        <span class="chip">Screenshot on-fail</span>
-                        <span class="chip">CI-ready</span>
-                    </div>
-                </div>
+            <div
+              style="
+                display: flex;
+                gap: 0.4em;
+                flex-wrap: wrap;
+                margin-top: 0.5em;
+              "
+            >
+              <span class="chip">HTML report</span>
+              <span class="chip">Trace on-retry</span>
+              <span class="chip">Screenshot on-fail</span>
+              <span class="chip">CI-ready</span>
             </div>
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- ============================================================
          SLIDE 16 — BILAN
          ============================================================ -->
     <section class="slide" data-title="Bilan">
-        <span class="slide-number">16 / 16</span>
-        <span class="slide-tag">Bilan</span>
+      <span class="slide-number">17 / 17</span>
+      <span class="slide-tag">Bilan</span>
 
-        <div class="slide-content">
-            <div class="reveal">
-                <span class="kicker">Bilan · chaîne de qualité</span>
-                <h2 style="margin-top: 0.4em;">De zéro test à un pipeline complet, pour un projet abandonné.</h2>
-            </div>
-
-            <div class="metrics reveal">
-                <div class="metric"><span class="value">20</span><span class="label">Tickets Jira</span></div>
-                <div class="metric"><span class="value">24 → 0</span><span class="label">Issues SonarQube</span></div>
-                <div class="metric"><span class="value">5</span><span class="label">Specs Playwright</span></div>
-                <div class="metric"><span class="value">13</span><span class="label">Commits <code>fix(KAN)</code></span></div>
-            </div>
-
-            <div class="reveal" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(0.8rem, 2vw, 2rem);">
-                <div>
-                    <h3 style="color: var(--red);">Ce qu'on livre</h3>
-                    <ul class="bullets" style="margin-top: 0.5em;">
-                        <li>Un fork stable + Quality Gate Passed</li>
-                        <li>Une chaîne Jira → SonarQube → Playwright opérationnelle</li>
-                        <li>Traçabilité Git ↔ Jira à chaque commit</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 style="color: var(--blue);">Ce qu'on laisse derrière</h3>
-                    <ul class="bullets" style="margin-top: 0.5em;">
-                        <li>Un workflow de revue à trois qui force la qualité</li>
-                        <li>Des scripts reproductibles (scan SonarQube, screenshots)</li>
-                        <li>Un plan de test <code>TESTS.md</code> comme contrat de non-régression</li>
-                    </ul>
-                </div>
-            </div>
+      <div class="slide-content">
+        <div class="reveal">
+          <span class="kicker">Bilan · chaîne de qualité</span>
+          <h2 style="margin-top: 0.4em">
+            De zéro test à un pipeline complet, pour un projet abandonné.
+          </h2>
         </div>
+
+        <div class="metrics reveal">
+          <div class="metric">
+            <span class="value">20</span><span class="label">Tickets Jira</span>
+          </div>
+          <div class="metric">
+            <span class="value">24 → 0</span
+            ><span class="label">Issues SonarQube</span>
+          </div>
+          <div class="metric">
+            <span class="value">5</span
+            ><span class="label">Specs Playwright</span>
+          </div>
+          <div class="metric">
+            <span class="value">13</span
+            ><span class="label">Commits <code>fix(KAN)</code></span>
+          </div>
+        </div>
+
+        <div
+          class="reveal"
+          style="
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(0.8rem, 2vw, 2rem);
+          "
+        >
+          <div>
+            <h3 style="color: var(--red)">Ce qu'on livre</h3>
+            <ul class="bullets" style="margin-top: 0.5em">
+              <li>Un fork stable + Quality Gate Passed</li>
+              <li>Une chaîne Jira → SonarQube → Playwright opérationnelle</li>
+              <li>Traçabilité Git ↔ Jira à chaque commit</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="color: var(--blue)">Ce qu'on laisse derrière</h3>
+            <ul class="bullets" style="margin-top: 0.5em">
+              <li>Un workflow de revue à trois qui force la qualité</li>
+              <li>Des scripts reproductibles (scan SonarQube, screenshots)</li>
+              <li>
+                Un plan de test <code>TESTS.md</code> comme contrat de
+                non-régression
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================
          CLOSING — MERCI
          ============================================================ -->
     <section class="slide closing-slide" data-title="Merci">
-        <span class="slide-number">Fin</span>
-        <span class="slide-tag">Questions</span>
+      <span class="slide-number">Fin</span>
+      <span class="slide-tag">Questions</span>
 
-        <div class="slide-content" style="justify-content: center; align-items: center;">
-            <h1 class="reveal">Merci<span class="accent">.</span></h1>
-            <p class="reveal">github.com/AirKyzzZ/atelier2-DEVE427 &nbsp;·&nbsp; jira KAN</p>
-            <p class="reveal" style="margin-top: 0.4em;">MM · GL · MB — DEVE427 · avril 2026</p>
-        </div>
+      <div
+        class="slide-content"
+        style="justify-content: center; align-items: center"
+      >
+        <h1 class="reveal">Merci<span class="accent">.</span></h1>
+        <p class="reveal">
+          github.com/AirKyzzZ/atelier2-DEVE427 &nbsp;·&nbsp; jira KAN
+        </p>
+        <p class="reveal" style="margin-top: 0.4em">
+          MM · GL · MB — DEVE427 · avril 2026
+        </p>
+      </div>
     </section>
 
     <!-- ============================================================
          REMOTE CONTROL VIEW (rendered only when ?remote=<id>)
          ============================================================ -->
     <template id="remoteTemplate">
-        <div class="remote-app" id="remoteApp">
-            <header>
-                <span class="status"><span class="dot"></span><span class="txt">connexion…</span></span>
-                <span class="session"></span>
-            </header>
+      <div class="remote-app" id="remoteApp">
+        <header>
+          <span class="status"
+            ><span class="dot"></span><span class="txt">connexion…</span></span
+          >
+          <span class="session"></span>
+        </header>
 
-            <div>
-                <div class="context">Télécommande · présentation</div>
-                <h1>Fork<br>taxonomy<span class="accent">.</span></h1>
-            </div>
-
-            <div class="remote-controls">
-                <button class="remote-btn primary" data-action="next">Suivant →</button>
-                <button class="remote-btn secondary" data-action="prev">← Précédent</button>
-                <button class="remote-btn ghost" data-action="first">⤒ Début</button>
-                <button class="remote-btn ghost" data-action="last">⤓ Fin</button>
-                <button class="remote-btn ghost" data-action="fullscreen">⛶ Plein écran</button>
-            </div>
-
-            <div class="remote-footer">Reste simple : un tap = une transition. Pas de latence perçue &lt; 100ms.</div>
+        <div>
+          <div class="context">Télécommande · présentation</div>
+          <h1>Fork<br />taxonomy<span class="accent">.</span></h1>
         </div>
+
+        <div class="remote-controls">
+          <button class="remote-btn primary" data-action="next">
+            Suivant →
+          </button>
+          <button class="remote-btn secondary" data-action="prev">
+            ← Précédent
+          </button>
+          <button class="remote-btn ghost" data-action="first">⤒ Début</button>
+          <button class="remote-btn ghost" data-action="last">⤓ Fin</button>
+          <button class="remote-btn ghost" data-action="fullscreen">
+            ⛶ Plein écran
+          </button>
+        </div>
+
+        <div class="remote-footer">
+          Reste simple : un tap = une transition. Pas de latence perçue &lt;
+          100ms.
+        </div>
+      </div>
     </template>
 
     <script>
-        /* ============================================================
+      /* ============================================================
            ROUTER: decide between presentation mode and remote mode
            ============================================================ */
-        const params = new URLSearchParams(location.search);
-        const remoteId = params.get('remote');
+      const params = new URLSearchParams(location.search)
+      const remoteId = params.get("remote")
 
-        if (remoteId) {
-            initRemoteMode(remoteId);
-        } else {
-            initPresentation();
-        }
+      if (remoteId) {
+        initRemoteMode(remoteId)
+      } else {
+        initPresentation()
+      }
 
-        /* ============================================================
+      /* ============================================================
            PRESENTATION MODE
            ============================================================ */
-        function initPresentation() {
-            const slides = Array.from(document.querySelectorAll('.slide'));
-            const progressBar = document.getElementById('progressBar');
-            const remotePin = document.getElementById('remotePin');
-            let currentIndex = 0;
+      function initPresentation() {
+        const slides = Array.from(document.querySelectorAll(".slide"))
+        const progressBar = document.getElementById("progressBar")
+        const remotePin = document.getElementById("remotePin")
+        let currentIndex = 0
 
-            function goTo(index) {
-                const clamped = Math.max(0, Math.min(slides.length - 1, index));
-                slides[clamped].scrollIntoView({ behavior: 'smooth', block: 'start' });
-                currentIndex = clamped;
+        function goTo(index) {
+          const clamped = Math.max(0, Math.min(slides.length - 1, index))
+          slides[clamped].scrollIntoView({ behavior: "smooth", block: "start" })
+          currentIndex = clamped
+        }
+        const next = () => goTo(currentIndex + 1)
+        const prev = () => goTo(currentIndex - 1)
+        const first = () => goTo(0)
+        const last = () => goTo(slides.length - 1)
+
+        /* Intersection observer: add .visible + track current slide */
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting && e.intersectionRatio > 0.5) {
+                e.target.classList.add("visible")
+                currentIndex = slides.indexOf(e.target)
+                const progress = ((currentIndex + 1) / slides.length) * 100
+                progressBar.style.width = progress + "%"
+              }
+            })
+          },
+          { threshold: [0.5] }
+        )
+        slides.forEach((s) => io.observe(s))
+
+        /* Keyboard navigation */
+        document.addEventListener("keydown", (e) => {
+          if (e.target.isContentEditable) return
+          switch (e.key) {
+            case "ArrowRight":
+            case "PageDown":
+            case " ":
+              e.preventDefault()
+              next()
+              break
+            case "ArrowLeft":
+            case "PageUp":
+              e.preventDefault()
+              prev()
+              break
+            case "Home":
+              e.preventDefault()
+              first()
+              break
+            case "End":
+              e.preventDefault()
+              last()
+              break
+            case "f":
+            case "F":
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {})
+              } else {
+                document.exitFullscreen()
+              }
+              break
+          }
+        })
+
+        /* Touch swipe (less critical — user should use mouse/keyboard) */
+        let touchStartY = null
+        document.addEventListener(
+          "touchstart",
+          (e) => {
+            touchStartY = e.touches[0].clientY
+          },
+          { passive: true }
+        )
+        document.addEventListener(
+          "touchend",
+          (e) => {
+            if (touchStartY === null) return
+            const dy = e.changedTouches[0].clientY - touchStartY
+            if (Math.abs(dy) > 60) {
+              dy < 0 ? next() : prev()
             }
-            const next = () => goTo(currentIndex + 1);
-            const prev = () => goTo(currentIndex - 1);
-            const first = () => goTo(0);
-            const last = () => goTo(slides.length - 1);
+            touchStartY = null
+          },
+          { passive: true }
+        )
 
-            /* Intersection observer: add .visible + track current slide */
-            const io = new IntersectionObserver((entries) => {
-                entries.forEach((e) => {
-                    if (e.isIntersecting && e.intersectionRatio > 0.5) {
-                        e.target.classList.add('visible');
-                        currentIndex = slides.indexOf(e.target);
-                        const progress = ((currentIndex + 1) / slides.length) * 100;
-                        progressBar.style.width = progress + '%';
-                    }
-                });
-            }, { threshold: [0.5] });
-            slides.forEach((s) => io.observe(s));
+        /* Make first slide visible immediately (observer might miss it) */
+        requestAnimationFrame(() => slides[0].classList.add("visible"))
 
-            /* Keyboard navigation */
-            document.addEventListener('keydown', (e) => {
-                if (e.target.isContentEditable) return;
-                switch (e.key) {
-                    case 'ArrowRight':
-                    case 'PageDown':
-                    case ' ':
-                        e.preventDefault(); next(); break;
-                    case 'ArrowLeft':
-                    case 'PageUp':
-                        e.preventDefault(); prev(); break;
-                    case 'Home':
-                        e.preventDefault(); first(); break;
-                    case 'End':
-                        e.preventDefault(); last(); break;
-                    case 'f':
-                    case 'F':
-                        if (!document.fullscreenElement) {
-                            document.documentElement.requestFullscreen().catch(() => {});
-                        } else {
-                            document.exitFullscreen();
-                        }
-                        break;
-                }
-            });
-
-            /* Touch swipe (less critical — user should use mouse/keyboard) */
-            let touchStartY = null;
-            document.addEventListener('touchstart', (e) => {
-                touchStartY = e.touches[0].clientY;
-            }, { passive: true });
-            document.addEventListener('touchend', (e) => {
-                if (touchStartY === null) return;
-                const dy = e.changedTouches[0].clientY - touchStartY;
-                if (Math.abs(dy) > 60) { dy < 0 ? next() : prev(); }
-                touchStartY = null;
-            }, { passive: true });
-
-            /* Make first slide visible immediately (observer might miss it) */
-            requestAnimationFrame(() => slides[0].classList.add('visible'));
-
-            /* ========================================================
+        /* ========================================================
                PEERJS HOST: presenter accepts incoming commands from phone
                ======================================================== */
-            // Reuse peerId across reloads so QR code stays valid.
-            let peerId = sessionStorage.getItem('presenter-peer-id');
-            if (!peerId) {
-                peerId = 'tma-fork-' + Math.random().toString(36).slice(2, 9);
-                sessionStorage.setItem('presenter-peer-id', peerId);
-            }
-
-            const remoteUrl = `${location.origin}${location.pathname}?remote=${encodeURIComponent(peerId)}`;
-
-            /* Generate QR code on title slide */
-            const qrCanvas = document.getElementById('qrCanvas');
-            if (qrCanvas && window.QRCode) {
-                QRCode.toCanvas(qrCanvas, remoteUrl, {
-                    width: 200,
-                    margin: 0,
-                    color: { dark: '#141414', light: '#ffffff' },
-                    errorCorrectionLevel: 'M',
-                }, (err) => {
-                    if (err) console.error('QR generation failed', err);
-                });
-            }
-
-            function setRemoteStatus(state, text) {
-                remotePin.className = 'remote-pin ' + state;
-                remotePin.querySelector('.txt').textContent = text;
-            }
-            setRemoteStatus('', 'peer: ' + peerId.slice(-6));
-
-            if (!window.Peer) {
-                setRemoteStatus('error', 'PeerJS indisponible (offline?)');
-                return;
-            }
-
-            const peer = new Peer(peerId, { debug: 1 });
-            peer.on('open', () => {
-                setRemoteStatus('', 'ready · ' + peerId.slice(-6));
-            });
-            peer.on('connection', (conn) => {
-                conn.on('open', () => {
-                    setRemoteStatus('connected', 'remote connecté');
-                    document.getElementById('titleQr')?.classList.add('connected');
-                    conn.send({ type: 'state', current: currentIndex, total: slides.length });
-                });
-                conn.on('data', (msg) => {
-                    if (!msg || typeof msg !== 'object') return;
-                    switch (msg.action) {
-                        case 'next': next(); break;
-                        case 'prev': prev(); break;
-                        case 'first': first(); break;
-                        case 'last': last(); break;
-                        case 'fullscreen':
-                            if (!document.fullscreenElement) {
-                                document.documentElement.requestFullscreen().catch(() => {});
-                            } else {
-                                document.exitFullscreen();
-                            }
-                            break;
-                    }
-                    conn.send({ type: 'ack', current: currentIndex });
-                });
-                conn.on('close', () => {
-                    setRemoteStatus('', 'remote déconnecté · ' + peerId.slice(-6));
-                    document.getElementById('titleQr')?.classList.remove('connected');
-                });
-            });
-            peer.on('error', (err) => {
-                console.warn('PeerJS error:', err);
-                setRemoteStatus('error', 'peer error: ' + (err.type || 'unknown'));
-            });
+        // Reuse peerId across reloads so QR code stays valid.
+        let peerId = sessionStorage.getItem("presenter-peer-id")
+        if (!peerId) {
+          peerId = "tma-fork-" + Math.random().toString(36).slice(2, 9)
+          sessionStorage.setItem("presenter-peer-id", peerId)
         }
 
-        /* ============================================================
+        const remoteUrl = `${location.origin}${
+          location.pathname
+        }?remote=${encodeURIComponent(peerId)}`
+
+        /* Generate QR code on title slide using qrcodejs (davidshimjs) */
+        const qrTarget = document.getElementById("qrCanvas")
+        if (qrTarget && window.QRCode) {
+          qrTarget.replaceChildren() // idempotent on hot reload / reconnect
+          try {
+            new QRCode(qrTarget, {
+              text: remoteUrl,
+              width: 360,
+              height: 360,
+              colorDark: "#141414",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H,
+            })
+          } catch (err) {
+            console.error("QR generation failed", err)
+          }
+        } else if (qrTarget) {
+          console.warn(
+            "QRCode library unavailable — QR disabled, keyboard nav still works."
+          )
+        }
+
+        function setRemoteStatus(state, text) {
+          remotePin.className = "remote-pin " + state
+          remotePin.querySelector(".txt").textContent = text
+        }
+        setRemoteStatus("", "peer: " + peerId.slice(-6))
+
+        if (!window.Peer) {
+          setRemoteStatus("error", "PeerJS indisponible (offline?)")
+          return
+        }
+
+        const peer = new Peer(peerId, { debug: 1 })
+        peer.on("open", () => {
+          setRemoteStatus("", "ready · " + peerId.slice(-6))
+        })
+        peer.on("connection", (conn) => {
+          conn.on("open", () => {
+            setRemoteStatus("connected", "remote connecté")
+            document.getElementById("titleQr")?.classList.add("connected")
+            conn.send({
+              type: "state",
+              current: currentIndex,
+              total: slides.length,
+            })
+          })
+          conn.on("data", (msg) => {
+            if (!msg || typeof msg !== "object") return
+            switch (msg.action) {
+              case "next":
+                next()
+                break
+              case "prev":
+                prev()
+                break
+              case "first":
+                first()
+                break
+              case "last":
+                last()
+                break
+              case "fullscreen":
+                if (!document.fullscreenElement) {
+                  document.documentElement.requestFullscreen().catch(() => {})
+                } else {
+                  document.exitFullscreen()
+                }
+                break
+            }
+            conn.send({ type: "ack", current: currentIndex })
+          })
+          conn.on("close", () => {
+            setRemoteStatus("", "remote déconnecté · " + peerId.slice(-6))
+            document.getElementById("titleQr")?.classList.remove("connected")
+          })
+        })
+        peer.on("error", (err) => {
+          console.warn("PeerJS error:", err)
+          setRemoteStatus("error", "peer error: " + (err.type || "unknown"))
+        })
+      }
+
+      /* ============================================================
            REMOTE MODE (phone controller)
            ============================================================ */
-        function initRemoteMode(hostId) {
-            document.body.classList.add('remote-mode');
-            // Hide all slides: the body is now the remote UI
-            document.querySelectorAll('.slide, .progress-bar, .remote-pin, .kbd-hint').forEach((el) => el.remove());
+      function initRemoteMode(hostId) {
+        document.body.classList.add("remote-mode")
+        // Hide all slides: the body is now the remote UI
+        document
+          .querySelectorAll(".slide, .progress-bar, .remote-pin, .kbd-hint")
+          .forEach((el) => el.remove())
 
-            const tpl = document.getElementById('remoteTemplate');
-            const node = tpl.content.cloneNode(true);
-            document.body.appendChild(node);
+        const tpl = document.getElementById("remoteTemplate")
+        const node = tpl.content.cloneNode(true)
+        document.body.appendChild(node)
 
-            const app = document.getElementById('remoteApp');
-            const statusTxt = app.querySelector('.status .txt');
-            const sessionTxt = app.querySelector('.session');
-            sessionTxt.textContent = 'peer · ' + hostId.slice(-6);
+        const app = document.getElementById("remoteApp")
+        const statusTxt = app.querySelector(".status .txt")
+        const sessionTxt = app.querySelector(".session")
+        sessionTxt.textContent = "peer · " + hostId.slice(-6)
 
-            function setStatus(state, text) {
-                app.className = 'remote-app ' + state;
-                statusTxt.textContent = text;
-            }
-
-            if (!window.Peer) {
-                setStatus('error', 'PeerJS indisponible');
-                return;
-            }
-
-            const peer = new Peer({ debug: 1 });
-            let conn = null;
-
-            peer.on('open', () => {
-                setStatus('', 'connexion à ' + hostId.slice(-6) + '…');
-                conn = peer.connect(hostId, { reliable: true });
-                conn.on('open', () => {
-                    setStatus('connected', 'connecté · ' + hostId.slice(-6));
-                    try { navigator.vibrate && navigator.vibrate(15); } catch {}
-                });
-                conn.on('data', (msg) => {
-                    if (msg?.type === 'state') {
-                        // Could show slide N / total here if wanted
-                    }
-                });
-                conn.on('close', () => setStatus('error', 'déconnecté'));
-                conn.on('error', (e) => {
-                    console.warn('conn err', e);
-                    setStatus('error', 'erreur liaison');
-                });
-            });
-
-            peer.on('error', (err) => {
-                console.warn('PeerJS err', err);
-                setStatus('error', 'host introuvable (réessayer)');
-            });
-
-            /* Wire up buttons */
-            app.addEventListener('click', (e) => {
-                const btn = e.target.closest('[data-action]');
-                if (!btn) return;
-                const action = btn.dataset.action;
-                if (action === 'fullscreen') {
-                    // On the phone itself — helps avoid browser UI interfering
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen().catch(() => {});
-                    } else {
-                        document.exitFullscreen();
-                    }
-                    // Also forward to host
-                }
-                if (conn && conn.open) {
-                    try { navigator.vibrate && navigator.vibrate(8); } catch {}
-                    conn.send({ action });
-                } else {
-                    setStatus('error', 'pas encore connecté');
-                }
-            });
+        function setStatus(state, text) {
+          app.className = "remote-app " + state
+          statusTxt.textContent = text
         }
+
+        if (!window.Peer) {
+          setStatus("error", "PeerJS indisponible")
+          return
+        }
+
+        const peer = new Peer({ debug: 1 })
+        let conn = null
+
+        peer.on("open", () => {
+          setStatus("", "connexion à " + hostId.slice(-6) + "…")
+          conn = peer.connect(hostId, { reliable: true })
+          conn.on("open", () => {
+            setStatus("connected", "connecté · " + hostId.slice(-6))
+            try {
+              navigator.vibrate && navigator.vibrate(15)
+            } catch {}
+          })
+          conn.on("data", (msg) => {
+            if (msg?.type === "state") {
+              // Could show slide N / total here if wanted
+            }
+          })
+          conn.on("close", () => setStatus("error", "déconnecté"))
+          conn.on("error", (e) => {
+            console.warn("conn err", e)
+            setStatus("error", "erreur liaison")
+          })
+        })
+
+        peer.on("error", (err) => {
+          console.warn("PeerJS err", err)
+          setStatus("error", "host introuvable (réessayer)")
+        })
+
+        /* Wire up buttons */
+        app.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-action]")
+          if (!btn) return
+          const action = btn.dataset.action
+          if (action === "fullscreen") {
+            // On the phone itself — helps avoid browser UI interfering
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen().catch(() => {})
+            } else {
+              document.exitFullscreen()
+            }
+            // Also forward to host
+          }
+          if (conn && conn.open) {
+            try {
+              navigator.vibrate && navigator.vibrate(8)
+            } catch {}
+            conn.send({ action })
+          } else {
+            setStatus("error", "pas encore connecté")
+          }
+        })
+      }
     </script>
-</body>
+  </body>
 </html>
