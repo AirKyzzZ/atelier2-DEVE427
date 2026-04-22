@@ -42,12 +42,17 @@ Ce périmètre évoluera si de nouvelles issues sont remontées par SonarQube ou
 
 | Initiales | Membre | Rôle MOE | Responsabilités |
 |---|---|---|---|
-| **MM** | Maxime Mansiet | Chef de projet / Tech Lead | Architecture, revue de code, suivi qualité, transitions Jira |
-| **MB** | Mael Bourdin | Développeur / Responsable qualité | Implémentation des fixes, exécution SonarQube, validation des tickets |
+| **MM** | Maxime Mansiet | Chef de projet / Tech Lead | Architecture, revue de code, suivi qualité, transitions Jira, fixes critiques (var global, calendar) et bugs `page.tsx` |
+| **GL** | Grégoire Lefèvre | Développeur / Responsable refactoring & performance | Refactoring du cluster navigation (`key={index}` → ids stables) sur tous les composants nav (main/sidebar/mobile/toc) + nettoyage des imports dans `page.tsx` |
+| **MB** | Mael Bourdin | Développeur / Responsable qualité & sécurité | Suppression des imports inutilisés (`layout.tsx`, `loading.tsx`), résolution des `TODO` à enjeu sécurité (`subscription.ts`, `route.ts`, `post.ts`), retrait d'assertion superflue, exécution SonarQube et validation des tickets |
 
-Répartition des tickets SonarQube (Atelier 2) :
-- **MM** : KAN-4 → KAN-13 (10 tickets, sévérité Critical / Major)
-- **MB** : KAN-14 → KAN-23 (10 tickets, sévérité Minor / Info / Bug)
+Répartition des 20 tickets SonarQube (Atelier 2) — équilibrée 6 / 7 / 7 :
+
+- **MM** (6 tickets) : KAN-4, KAN-11, KAN-12, KAN-21, KAN-22, KAN-23 — Critical / High (var, composants render, expressions sans effet)
+- **GL** (7 tickets) : KAN-5, KAN-6, KAN-7, KAN-8, KAN-9, KAN-10, KAN-13 — Major / Minor (`key={index}` performance + imports)
+- **MB** (7 tickets) : KAN-14, KAN-15, KAN-16, KAN-17, KAN-18, KAN-19, KAN-20 — Minor / Info (imports, assertion, TODO)
+
+La validation par un pair (étape `En cours de revue`) tourne en triangle : MM → GL → MB → MM, ce qui garantit que personne ne valide ses propres fixes.
 
 Le README est historisé (voir `git log -- README.md`).
 
