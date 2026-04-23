@@ -37,7 +37,7 @@ importers:
         version: 2.4.5
       '@hookform/resolvers':
         specifier: ^3.1.0
-        version: 3.10.0(react-hook-form@7.73.1(react@18.3.1))
+        version: 3.10.0(react-hook-form@7.43.9(react@18.3.1))
       '@next-auth/prisma-adapter':
         specifier: ^1.0.6
         version: 1.0.7(@prisma/client@4.16.2(prisma@4.16.2))(next-auth@4.22.1(next@13.3.2-canary.13(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@6.10.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
@@ -195,8 +195,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0(@editorjs/editorjs@2.31.6)(@editorjs/paragraph@2.11.7)(react@18.3.1)
       react-hook-form:
-        specifier: ^7.43.9
-        version: 7.73.1(react@18.3.1)
+        specifier: 7.43.9
+        version: 7.43.9(react@18.3.1)
       react-textarea-autosize:
         specifier: ^8.4.1
         version: 8.5.9(@types/react@18.0.15)(react@18.3.1)
@@ -4410,11 +4410,11 @@ packages:
   react-editor-js@2.1.0:
     resolution: {integrity: sha512-unI9D2pTH/2gBenc6LgCXJm8iqnrzB71CHgfjQmaB+lGR0Njx+ZXydgUQm1VofMmvF6vcCNVDE1Eb47zQbm14g==}
 
-  react-hook-form@7.73.1:
-    resolution: {integrity: sha512-VAfVYOPcx3piiEVQy95vyFmBwbVUsP/AUIN+mpFG8h11yshDd444nn0VyfaGWSRnhOLVgiDu7HIuBtAIzxn9dA==}
-    engines: {node: '>=18.0.0'}
+  react-hook-form@7.43.9:
+    resolution: {integrity: sha512-AUDN3Pz2NSeoxQ7Hs6OhQhDr6gtF9YRuutGDwPQqhSUAHJSgGl2VeY3qN19MG0SucpjgDiuMJ4iC5T5uB+eaNQ==}
+    engines: {node: '>=12.22.0'}
     peerDependencies:
-      react: ^16.8.0 || ^17 || ^18 || ^19
+      react: ^16.8.0 || ^17 || ^18
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -5794,9 +5794,9 @@ snapshots:
       protobufjs: 7.5.5
       yargs: 17.7.2
 
-  '@hookform/resolvers@3.10.0(react-hook-form@7.73.1(react@18.3.1))':
+  '@hookform/resolvers@3.10.0(react-hook-form@7.43.9(react@18.3.1))':
     dependencies:
-      react-hook-form: 7.73.1(react@18.3.1)
+      react-hook-form: 7.43.9(react@18.3.1)
 
   '@humanwhocodes/config-array@0.13.0':
     dependencies:
@@ -9967,7 +9967,7 @@ snapshots:
       - '@editorjs/paragraph'
       - react
 
-  react-hook-form@7.73.1(react@18.3.1):
+  react-hook-form@7.43.9(react@18.3.1):
     dependencies:
       react: 18.3.1
 
