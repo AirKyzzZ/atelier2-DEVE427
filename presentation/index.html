@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <title>DEVE427 — TMA · Fork taxonomy</title>
+    <title>DEVE427 · TMA · Fork taxonomy</title>
 
     <!-- Fonts: Archivo Black (display) + Archivo (body) + JetBrains Mono (code) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -288,7 +288,9 @@
       }
       .title-slide .brand-mark {
         position: absolute;
-        top: clamp(1.5rem, 3vw, 3rem);
+        /* Push below the slide-number (which lives at top: clamp(1rem, 2.5vw, 2rem)
+           with mono small text) so the two never overlap on the title slide. */
+        top: clamp(2.8rem, 5.5vw, 4.5rem);
         left: clamp(1.5rem, 3vw, 3rem);
         display: flex;
         align-items: center;
@@ -1066,7 +1068,7 @@
         <div class="title-meta reveal">
           <div class="team">
             <strong>Maxime Mansiet · Grégoire Lefèvre · Mael Bourdin</strong>
-            <span>Cours DEVE427 — avril 2026</span>
+            <span>Cours DEVE427, avril 2026</span>
             <span>Fork de shadcn-ui/taxonomy</span>
           </div>
           <div class="title-qr" id="titleQr">
@@ -1107,7 +1109,7 @@
               critiques et les bugs de <code>page.tsx</code>.
             </p>
             <div class="tickets">
-              <strong>6 tickets</strong> — KAN-4, 11, 12, 21, 22, 23
+              <strong>6 tickets</strong> : KAN-4, 11, 12, 21, 22, 23
             </div>
           </article>
 
@@ -1122,7 +1124,7 @@
               des identifiants stables sur <em>tous</em> les composants nav.
             </p>
             <div class="tickets">
-              <strong>7 tickets</strong> — KAN-5, 6, 7, 8, 9, 10, 13
+              <strong>7 tickets</strong> : KAN-5, 6, 7, 8, 9, 10, 13
             </div>
           </article>
 
@@ -1137,7 +1139,7 @@
               sécurité, exécute SonarQube, valide la chaîne.
             </p>
             <div class="tickets">
-              <strong>7 tickets</strong> — KAN-14 à KAN-20
+              <strong>7 tickets</strong> : KAN-14 à KAN-20
             </div>
           </article>
         </div>
@@ -1194,19 +1196,19 @@
             <p>
               Une application <strong>Next.js 13 App Router</strong> complète :
               Server Components, MDX via Contentlayer, NextAuth, Prisma, Stripe.
-              Un monorepo réel, production-grade, abandonné depuis 18 mois —
-              parfait terrain de maintenance.
+              C'est un monorepo réel, en production, sans activité depuis 18
+              mois, donc un cas concret pour pratiquer la maintenance.
             </p>
             <ul class="bullets" style="margin-top: clamp(0.5rem, 1.2vw, 1rem)">
               <li>
-                <strong>Licence MIT</strong> — Open-source, fork sans friction.
+                <strong>Licence MIT</strong>, fork sans friction.
               </li>
               <li>
-                <strong>App web + API routes</strong> — Lisible pour un audit.
+                <strong>App web + API routes</strong>, lisible pour un audit.
               </li>
               <li>
-                <strong>Aucun test avant le fork</strong> — Justifie la mission
-                Atelier 3.
+                <strong>Aucun test avant le fork</strong>, ce qui justifie la
+                mission Atelier 3.
               </li>
               <li>
                 <strong
@@ -1324,8 +1326,7 @@
             <tr>
               <td><strong>Fonctionnalités</strong></td>
               <td>
-                Mise en place d'une
-                <strong>chaîne de qualité</strong> (SonarQube + Jira +
+                Mise en place d'une chaîne de qualité (SonarQube + Jira +
                 Playwright) là où il n'en existait aucune.
               </td>
             </tr>
@@ -1430,7 +1431,7 @@
             >Jira Automation · règle configurée par Mael Bourdin</span
           >
           <h2 style="margin-top: 0.4em">
-            Un commit apparaît — le ticket passe
+            Un commit apparaît, le ticket passe
             <span style="color: var(--blue)">En cours</span> tout seul.
           </h2>
         </div>
@@ -1706,7 +1707,7 @@
             padding-top: clamp(0.5rem, 1.2vw, 1rem);
           "
         >
-          Chaque commit porte la clé du ticket (<code>fix(KAN-X):</code>) —
+          Chaque commit porte la clé du ticket (<code>fix(KAN-X):</code>),
           traçabilité Git ↔ Jira garantie.
         </div>
       </div>
@@ -2019,7 +2020,7 @@
           github.com/AirKyzzZ/atelier2-DEVE427 &nbsp;·&nbsp; jira KAN
         </p>
         <p class="reveal" style="margin-top: 0.4em">
-          MM · GL · MB — DEVE427 · avril 2026
+          MM · GL · MB, DEVE427 · avril 2026
         </p>
       </div>
     </section>
