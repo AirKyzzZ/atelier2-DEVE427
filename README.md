@@ -1,5 +1,7 @@
 # Taxonomy — DEVE427 TMA
 
+[![CI](https://github.com/AirKyzzZ/atelier2-DEVE427/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AirKyzzZ/atelier2-DEVE427/actions/workflows/ci.yml)
+
 **Cours:** DEVE427 — Développement d'applications & Tierce Maintenance Applicative
 **Fork:** https://github.com/AirKyzzZ/atelier2-DEVE427
 **Upstream:** https://github.com/shadcn-ui/taxonomy
