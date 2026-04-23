@@ -1,7 +1,5 @@
 name: CI
 
-# Runs on every push to main and on every PR targeting main.
-# Manual trigger available via the "Run workflow" button on the Actions tab.
 on:
   push:
     branches: [main]
@@ -9,16 +7,7 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-# CI-only fake env vars. The Next.js app validates them at boot via
-# `@t3-oss/env-nextjs` (env.mjs) — non-empty values pass validation, no
-# real network call is performed by `next build`. To swap in real
-# secrets later, define repository secrets with the same names; the
-# `secrets.X || 'default'` expression below picks them up automatically.
 env:
-  # Local .nvmrc pins Node 16, but the lockfile is lockfileVersion 9.0
-  # (written by pnpm 9+). pnpm 9+ requires Node 18+, so CI runs Node 20
-  # LTS, and pnpm matches the local CLI (10.x) to avoid resolution
-  # drift between local and CI.
   NODE_VERSION: "20"
   PNPM_VERSION: "10"
 
@@ -38,16 +27,9 @@ env:
   NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Fast feedback: lint + typecheck run in parallel, gate the heavier jobs.
-  # ---------------------------------------------------------------------------
   lint:
     name: ESLint
     runs-on: ubuntu-latest
-    # Soft-fail: `next lint` triggers Next.js's full config load, which
-    # runs `env.mjs` validation and pulls `eslint-plugin-tailwindcss`.
-    # Both fail in different ways in CI vs local; we surface the result
-    # without blocking the workflow.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -59,12 +41,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - name: Install dependencies
-        # `--shamefully-hoist` flattens node_modules at the top level so
-        # tools that don't grok pnpm's isolated symlink layout (e.g.
-        # `eslint-plugin-tailwindcss` looking up its `tailwindcss` peer
-        # via Node's standard module resolution) work as expected.
-        # `--no-frozen-lockfile` lets pnpm 10 re-link if the lockfile
-        # was authored by an older minor.
         run: pnpm install --no-frozen-lockfile --shamefully-hoist
       - name: next lint
         run: pnpm lint
@@ -72,11 +48,6 @@ jobs:
   typecheck:
     name: TypeScript
     runs-on: ubuntu-latest
-    # Soft-fail: the project pins TypeScript 4.7.4 (2022) while
-    # react-hook-form transitive resolves to 7.73.1 which uses syntax
-    # only TS 5+ can parse. Bumping TS would require regenerating the
-    # lockfile and risks breaking the rest of the deps for the demo.
-    # We still publish the result so the team can see the regression.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -88,28 +59,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - name: Install dependencies
-        # `--shamefully-hoist` flattens node_modules at the top level so
-        # tools that don't grok pnpm's isolated symlink layout (e.g.
-        # `eslint-plugin-tailwindcss` looking up its `tailwindcss` peer
-        # via Node's standard module resolution) work as expected.
-        # `--no-frozen-lockfile` lets pnpm 10 re-link if the lockfile
-        # was authored by an older minor.
         run: pnpm install --no-frozen-lockfile --shamefully-hoist
       - name: tsc --noEmit
         run: pnpm typecheck
 
-  # ---------------------------------------------------------------------------
-  # Build the production bundle. Uses fake env vars (see env block above) so
-  # @t3-oss/env-nextjs accepts the boot — no real Stripe/Postmark/etc. call
-  # is made at build time.
-  # ---------------------------------------------------------------------------
   build:
     name: Next.js build
     runs-on: ubuntu-latest
-    # Soft-fail: `next build` runs the same Next.js config + tsc plugin
-    # chain that is known to surface react-hook-form parser issues
-    # under TypeScript 4.7.4. Bumping deps would require a lockfile
-    # rewrite past the demo deadline.
     continue-on-error: true
     needs: [lint]
     steps:
@@ -122,29 +78,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - name: Install dependencies
-        # `--shamefully-hoist` flattens node_modules at the top level so
-        # tools that don't grok pnpm's isolated symlink layout (e.g.
-        # `eslint-plugin-tailwindcss` looking up its `tailwindcss` peer
-        # via Node's standard module resolution) work as expected.
-        # `--no-frozen-lockfile` lets pnpm 10 re-link if the lockfile
-        # was authored by an older minor.
         run: pnpm install --no-frozen-lockfile --shamefully-hoist
       - name: Generate Prisma client
         run: pnpm prisma generate
       - name: Build (contentlayer + next build)
         run: pnpm build
 
-  # ---------------------------------------------------------------------------
-  # Atelier 3 — Playwright e2e (chromium desktop + mobile). MySQL service
-  # container backs the Prisma client; we push the schema before the tests
-  # spin up the dev server via playwright.config.ts `webServer`.
-  # ---------------------------------------------------------------------------
   playwright:
     name: Playwright e2e
     runs-on: ubuntu-latest
-    # Soft-fail: the dev server boots with fake env vars and the test
-    # MySQL has no seed data, so a few specs (auth, blog) may 404 or
-    # flake. We still upload the HTML report so failures are visible.
     continue-on-error: true
     needs: [lint]
     services:
@@ -172,12 +114,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - name: Install dependencies
-        # `--shamefully-hoist` flattens node_modules at the top level so
-        # tools that don't grok pnpm's isolated symlink layout (e.g.
-        # `eslint-plugin-tailwindcss` looking up its `tailwindcss` peer
-        # via Node's standard module resolution) work as expected.
-        # `--no-frozen-lockfile` lets pnpm 10 re-link if the lockfile
-        # was authored by an older minor.
         run: pnpm install --no-frozen-lockfile --shamefully-hoist
       - name: Wait for MySQL ready
         run: |
@@ -188,7 +124,7 @@ jobs:
             echo "MySQL not ready (attempt $i)"; sleep 2
           done
           exit 1
-      - name: Apply Prisma schema (db push, no migration history needed for CI)
+      - name: Apply Prisma schema
         run: pnpm prisma db push --skip-generate --accept-data-loss
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
@@ -202,19 +138,9 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # ---------------------------------------------------------------------------
-  # Atelier 2 — SonarQube scan inside CI. We boot a short-lived SonarQube
-  # Community container, change the default admin password (Sonar refuses
-  # to operate with the default), generate a token, then run the scanner.
-  # Results are NOT persisted between runs — Sonar dies with the container.
-  # The Quality Gate result still gates the job (job fails if Sonar QG fails).
-  # ---------------------------------------------------------------------------
   sonarqube:
     name: SonarQube (Docker)
     runs-on: ubuntu-latest
-    # Soft-fail: the QG can come back red on existing project debt
-    # that we knowingly defer; failing the workflow on it would block
-    # every PR. The local Sonar dashboard remains the source of truth.
     continue-on-error: true
     needs: [lint]
     services:
@@ -231,7 +157,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Sonar wants the full history for accurate blame info.
           fetch-depth: 0
 
       - name: Wait for SonarQube to be UP
@@ -247,8 +172,6 @@ jobs:
 
       - name: Change default admin password
         run: |
-          # Sonar requires the default admin password to be changed before any
-          # API call other than /api/system/status works in a meaningful way.
           curl -s -u admin:admin -X POST \
             "http://localhost:9000/api/users/change_password?login=admin&password=ci-admin-pass&previousPassword=admin" \
             -o /dev/null -w "change_password HTTP %{http_code}\n"
@@ -256,9 +179,6 @@ jobs:
       - name: Create scanner token
         id: sonar-token
         env:
-          # Inject github.run_id via env (not direct ${{}} interpolation in run:)
-          # to keep the script free of any expression injection surface, even
-          # though run_id is a numeric and not user-controlled.
           RUN_ID: ${{ github.run_id }}
         run: |
           TOKEN=$(curl -s -u admin:ci-admin-pass -X POST \
@@ -274,8 +194,6 @@ jobs:
           SONAR_HOST_URL: http://localhost:9000
 
       - name: Quality Gate check
-        # Polls the report endpoint until Sonar finishes processing, then
-        # fails the job if the Quality Gate is RED.
         env:
           SONAR_USER_PASS: admin:ci-admin-pass
           SONAR_BASE: http://localhost:9000
