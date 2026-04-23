@@ -185,4 +185,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v3
         env:
           SONAR_TOKEN: ${{ steps.sonar-token.outputs.token }}
-          SONAR_HOST_URL: http://localhost:9000
+          # The scan action runs in its own Docker container, so
+          # `localhost` would point at that container, not the runner.
+          # Reach Sonar through the job-level service network alias.
+          SONAR_HOST_URL: http://sonarqube:9000
