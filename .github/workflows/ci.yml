@@ -15,8 +15,11 @@ on:
 # secrets later, define repository secrets with the same names; the
 # `secrets.X || 'default'` expression below picks them up automatically.
 env:
-  NODE_VERSION: "16.18.0"
-  PNPM_VERSION: "8"
+  # Local .nvmrc pins Node 16, but the lockfile was regenerated with
+  # pnpm 9+ (lockfileVersion 9.0). pnpm 9+ requires Node 18+, so CI
+  # runs Node 20 LTS to stay compatible with the lockfile we ship.
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
 
   NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'http://localhost:3000' }}
   NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci_fake_secret_thirty_two_chars_xx' }}
