@@ -1,0 +1,251 @@
+name: CI
+
+# Runs on every push to main and on every PR targeting main.
+# Manual trigger available via the "Run workflow" button on the Actions tab.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+# CI-only fake env vars. The Next.js app validates them at boot via
+# `@t3-oss/env-nextjs` (env.mjs) — non-empty values pass validation, no
+# real network call is performed by `next build`. To swap in real
+# secrets later, define repository secrets with the same names; the
+# `secrets.X || 'default'` expression below picks them up automatically.
+env:
+  NODE_VERSION: "16.18.0"
+  PNPM_VERSION: "8"
+
+  NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'http://localhost:3000' }}
+  NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci_fake_secret_thirty_two_chars_xx' }}
+  GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID || 'ci_fake_client_id' }}
+  GITHUB_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET || 'ci_fake_client_secret_value' }}
+  GITHUB_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN || 'ghp_ci_fake_access_token_value_xxx' }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL || 'mysql://taxonomy:taxonomy@127.0.0.1:3306/taxonomy_ci' }}
+  SMTP_FROM: ${{ secrets.SMTP_FROM || 'ci@taxonomy.local' }}
+  POSTMARK_API_TOKEN: ${{ secrets.POSTMARK_API_TOKEN || 'ci-fake-postmark-token' }}
+  POSTMARK_SIGN_IN_TEMPLATE: ${{ secrets.POSTMARK_SIGN_IN_TEMPLATE || '12345' }}
+  POSTMARK_ACTIVATION_TEMPLATE: ${{ secrets.POSTMARK_ACTIVATION_TEMPLATE || '67890' }}
+  STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY || 'sk_test_ci_fake_stripe_key_value' }}
+  STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || 'whsec_ci_fake_webhook_secret_value' }}
+  STRIPE_PRO_MONTHLY_PLAN_ID: ${{ secrets.STRIPE_PRO_MONTHLY_PLAN_ID || 'price_ci_fake_plan_id' }}
+  NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Fast feedback: lint + typecheck run in parallel, gate the heavier jobs.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: next lint
+        run: pnpm lint
+
+  typecheck:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: tsc --noEmit
+        run: pnpm typecheck
+
+  # ---------------------------------------------------------------------------
+  # Build the production bundle. Uses fake env vars (see env block above) so
+  # @t3-oss/env-nextjs accepts the boot — no real Stripe/Postmark/etc. call
+  # is made at build time.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Next.js build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+      - name: Build (contentlayer + next build)
+        run: pnpm build
+
+  # ---------------------------------------------------------------------------
+  # Atelier 3 — Playwright e2e (chromium desktop + mobile). MySQL service
+  # container backs the Prisma client; we push the schema before the tests
+  # spin up the dev server via playwright.config.ts `webServer`.
+  # ---------------------------------------------------------------------------
+  playwright:
+    name: Playwright e2e
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpw
+          MYSQL_DATABASE: taxonomy_ci
+          MYSQL_USER: taxonomy
+          MYSQL_PASSWORD: taxonomy
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptaxonomy"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Wait for MySQL ready
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -u taxonomy -ptaxonomy --silent; then
+              echo "MySQL is up"; exit 0
+            fi
+            echo "MySQL not ready (attempt $i)"; sleep 2
+          done
+          exit 1
+      - name: Apply Prisma schema (db push, no migration history needed for CI)
+        run: pnpm prisma db push --skip-generate --accept-data-loss
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run Playwright suite
+        run: pnpm exec playwright test --reporter=list,html
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Atelier 2 — SonarQube scan inside CI. We boot a short-lived SonarQube
+  # Community container, change the default admin password (Sonar refuses
+  # to operate with the default), generate a token, then run the scanner.
+  # Results are NOT persisted between runs — Sonar dies with the container.
+  # The Quality Gate result still gates the job (job fails if Sonar QG fails).
+  # ---------------------------------------------------------------------------
+  sonarqube:
+    name: SonarQube (Docker)
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    services:
+      sonarqube:
+        image: sonarqube:lts-community
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:9000/api/system/status"
+          --health-interval=15s
+          --health-timeout=10s
+          --health-retries=20
+          --health-start-period=60s
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Sonar wants the full history for accurate blame info.
+          fetch-depth: 0
+
+      - name: Wait for SonarQube to be UP
+        run: |
+          for i in $(seq 1 60); do
+            STATUS=$(curl -s http://localhost:9000/api/system/status | python3 -c "import sys,json;print(json.load(sys.stdin).get('status','?'))" 2>/dev/null || echo "DOWN")
+            echo "[$i] Sonar status: $STATUS"
+            if [ "$STATUS" = "UP" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "SonarQube failed to become UP" >&2
+          exit 1
+
+      - name: Change default admin password
+        run: |
+          # Sonar requires the default admin password to be changed before any
+          # API call other than /api/system/status works in a meaningful way.
+          curl -s -u admin:admin -X POST \
+            "http://localhost:9000/api/users/change_password?login=admin&password=ci-admin-pass&previousPassword=admin" \
+            -o /dev/null -w "change_password HTTP %{http_code}\n"
+
+      - name: Create scanner token
+        id: sonar-token
+        env:
+          # Inject github.run_id via env (not direct ${{}} interpolation in run:)
+          # to keep the script free of any expression injection surface, even
+          # though run_id is a numeric and not user-controlled.
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          TOKEN=$(curl -s -u admin:ci-admin-pass -X POST \
+            "http://localhost:9000/api/user_tokens/generate?name=ci-${RUN_ID}" \
+            | python3 -c "import sys,json;print(json.load(sys.stdin)['token'])")
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@v3
+        env:
+          SONAR_TOKEN: ${{ steps.sonar-token.outputs.token }}
+          SONAR_HOST_URL: http://localhost:9000
+
+      - name: Quality Gate check
+        # Polls the report endpoint until Sonar finishes processing, then
+        # fails the job if the Quality Gate is RED.
+        env:
+          SONAR_USER_PASS: admin:ci-admin-pass
+          SONAR_BASE: http://localhost:9000
+        run: |
+          REPORT_FILE=.scannerwork/report-task.txt
+          if [ ! -f "$REPORT_FILE" ]; then
+            echo "scanner did not produce $REPORT_FILE" >&2
+            exit 1
+          fi
+          CE_TASK_URL=$(grep ceTaskUrl= "$REPORT_FILE" | cut -d= -f2-)
+          echo "Polling $CE_TASK_URL"
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -u "$SONAR_USER_PASS" "$CE_TASK_URL" | python3 -c "import sys,json;print(json.load(sys.stdin)['task']['status'])")
+            echo "[$i] CE task: $STATUS"
+            if [ "$STATUS" = "SUCCESS" ]; then break; fi
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "CANCELED" ]; then exit 1; fi
+            sleep 5
+          done
+          ANALYSIS_ID=$(curl -s -u "$SONAR_USER_PASS" "$CE_TASK_URL" | python3 -c "import sys,json;print(json.load(sys.stdin)['task']['analysisId'])")
+          QG=$(curl -s -u "$SONAR_USER_PASS" "$SONAR_BASE/api/qualitygates/project_status?analysisId=$ANALYSIS_ID" | python3 -c "import sys,json;print(json.load(sys.stdin)['projectStatus']['status'])")
+          echo "Quality Gate: $QG"
+          if [ "$QG" != "OK" ]; then
+            echo "Quality Gate failed" >&2
+            exit 1
+          fi
