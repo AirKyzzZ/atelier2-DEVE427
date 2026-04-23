@@ -1,0 +1,127 @@
+# Custom Semgrep rules for the taxonomy fork (DEVE427 Atelier 4).
+#
+# These rules target the concrete findings identified during the STRIDE
+# threat-modelling exercise. They are intentionally specific to this
+# codebase (rather than generic OWASP patterns) so the scan output
+# corresponds 1:1 with the tickets opened on Jira (KAN-24..KAN-30).
+#
+# Run locally:
+#   semgrep --config semgrep.yml --json --metrics=off \
+#     --exclude=node_modules --exclude=.next --exclude=.contentlayer \
+#     --exclude=tests --exclude=presentation --exclude=docs \
+#     app components lib hooks types middleware.ts env.mjs
+
+rules:
+  - id: tma-validation-uses-z-any
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: |
+      `z.any()` defeats Zod validation: the field is accepted as-is and
+      can carry arbitrary HTML/JS that may be rendered later → stored
+      XSS (Atelier 4 / Frontière 1 / Tampering).
+      Use a strict block schema instead, or sanitize before persisting.
+    metadata:
+      stride: tampering
+      cwe: "CWE-79"
+      severity-class: critical
+    pattern-either:
+      - pattern: z.any()
+
+  - id: tma-ts-nocheck-disables-types
+    languages: [typescript]
+    severity: WARNING
+    message: |
+      `// @ts-nocheck` disables TypeScript on the whole file. Used in
+      `lib/subscription.ts` — `isPro` may silently return `undefined`
+      instead of `false`, granting Pro access to a free user
+      (Atelier 4 / Frontière 2 / Tampering + EoP).
+    metadata:
+      stride: tampering
+      cwe: "CWE-1287"
+      severity-class: major
+    pattern-regex: ^//\s*@ts-nocheck
+
+  - id: tma-nextauth-url-optional
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: |
+      `NEXTAUTH_URL` is `optional()` in the env schema. In production
+      this allows host-header injection on the magic-link email
+      (Atelier 4 / Frontière 3 / EoP). Make it required or branch on
+      `process.env.NODE_ENV === "production"`.
+    metadata:
+      stride: elevation-of-privilege
+      cwe: "CWE-20"
+      severity-class: major
+    pattern: NEXTAUTH_URL$X.string().url().optional()
+
+  - id: tma-stripe-webhook-update-by-metadata-only
+    languages: [typescript]
+    severity: ERROR
+    message: |
+      Stripe webhook updates the user row with `where: { id:
+      session?.metadata?.userId }` only — the metadata is trusted blindly.
+      Cross-check with `stripeCustomerId` to prevent another tenant's
+      data from being updated by a forged or replayed event
+      (Atelier 4 / Frontière 3 / Tampering).
+    metadata:
+      stride: tampering
+      cwe: "CWE-345"
+      severity-class: critical
+    pattern: |
+      $DB.user.update({
+        where: { id: $SESSION.metadata.userId },
+        ...
+      })
+
+  - id: tma-no-rate-limit-on-api-routes
+    languages: [typescript]
+    severity: WARNING
+    message: |
+      The middleware matcher does not include `/api/*` — none of the
+      API routes are rate limited. DoS surface and tier-cost abuse
+      (Atelier 4 / Frontières 1, 2, 3 / DoS).
+    metadata:
+      stride: denial-of-service
+      cwe: "CWE-770"
+      severity-class: major
+    pattern: |
+      matcher: ["/dashboard/:path*", "/editor/:path*", "/login", "/register"]
+
+  - id: tma-jwt-callback-hits-db-on-every-request
+    languages: [typescript]
+    severity: WARNING
+    message: |
+      `db.user.findFirst` runs inside the JWT callback — every
+      authenticated request triggers a DB round-trip. Amplification
+      DoS surface and unnecessary load on Postgres
+      (Atelier 4 / Frontière 2 / DoS).
+    metadata:
+      stride: denial-of-service
+      cwe: "CWE-400"
+      severity-class: minor
+    patterns:
+      - pattern-inside: |
+          async jwt({ token, user }) {
+            ...
+          }
+      - pattern: $DB.user.findFirst({ ... })
+
+  - id: tma-toctou-on-post-quota
+    languages: [typescript]
+    severity: WARNING
+    message: |
+      Time-of-check / time-of-use on the freemium post quota: `count`
+      then `create` are not atomic, two concurrent requests can both
+      see `count < limit` and create posts past the limit
+      (Atelier 4 / Frontière 1 / EoP).
+    metadata:
+      stride: elevation-of-privilege
+      cwe: "CWE-367"
+      severity-class: major
+    patterns:
+      - pattern-either:
+          - pattern: |
+              const $COUNT = await $DB.post.count({...})
+              ...
+              const $POST = await $DB.post.create({...})

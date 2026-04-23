@@ -168,6 +168,110 @@ tests/
 
 ---
 
+## CI/CD — GitHub Actions
+
+Toute la chaîne qualité a été câblée dans `.github/workflows/ci.yml`. Le workflow se déclenche sur chaque `push` vers `main` et sur chaque pull request, avec aussi un déclencheur manuel (`workflow_dispatch`).
+
+| Job | Outil | Rôle |
+|---|---|---|
+| **lint** | `next lint` (ESLint) | Style + règles React/Next.js |
+| **typecheck** | `tsc --noEmit` | Vérifie les types sans émettre de JS |
+| **build** | `pnpm build` (contentlayer + next build) | Garantit que la prod buildable |
+| **playwright** | `playwright test` (chromium desktop + Pixel 7) | Atelier 3 — exécute les 5 specs e2e contre une instance MySQL Docker |
+| **sonarqube** | SonarQube LTS Community en service container | Atelier 2 — scan + Quality Gate, fait échouer le job si la QG est rouge |
+
+`lint` + `typecheck` tournent en parallèle et gates `build` / `playwright` / `sonarqube` (les jobs lourds n'attendent pas `build`, ils s'exécutent en parallèle).
+
+**Variables d'environnement** : le workflow injecte des valeurs CI factices (mais valides pour la validation Zod de `@t3-oss/env-nextjs`) directement via le bloc `env:`. Pour brancher de vraies clefs, il suffit de définir les secrets GitHub homonymes ; l'expression `${{ secrets.X || 'default' }}` les pickup automatiquement.
+
+**Reproductibilité locale** : tout est lançable à la main : `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test:e2e`, et `sonar-scanner` une fois SonarQube démarré localement (`docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community`).
+
+---
+
+## Atelier 4 — Sécurité (STRIDE + Semgrep)
+
+### Étape 1 — Modélisation des menaces (STRIDE)
+
+Le schéma d'architecture (`presentation/assets/architecture-taxonomy.excalidraw`, exporté en PNG sous `docs/architecture-taxonomy.png`) découpe le système en 4 zones séparées par 3 frontières de confiance, chacune analysée ci-dessous selon les 6 catégories STRIDE (**S**poofing / **T**ampering / **R**epudiation / **I**nformation Disclosure / **D**enial of Service / **E**levation of Privilege).
+
+![Schéma d'architecture taxonomy avec frontières de confiance](./docs/architecture-taxonomy.png)
+
+#### Frontière 1 — Navigateur ↔ Serveur Next.js
+
+Toute requête entre depuis un client non contrôlé : pages publiques (`/dashboard`, `/editor`, `/login`), routes API (`/api/posts`, `/api/users/*`, `/api/auth/*`), webhooks. Le seul garde-fou applicatif est `middleware.ts` et les `getServerSession` côté route.
+
+| STRIDE | Menace | Vecteur / fichier | Mitigation actuelle | À faire |
+|---|---|---|---|---|
+| **S**poofing | Vol / rejeu du JWT NextAuth | Cookie capté via XSS ou MITM ; `middleware.ts:7` fait confiance au token sans binding IP/UA | Secret signé serveur (`NEXTAUTH_SECRET`), JWT strategy (`lib/auth.ts:19`) | Cookies `Secure` + `SameSite=Strict`, CSP, HSTS |
+| **T**ampering | XSS stocké via blocs EditorJS forgés | `lib/validations/post.ts:7` : `content: z.any()` accepte n'importe quoi | Validation titre + auth + ownership (`route.ts:83-93`) | Schéma strict des blocs EditorJS, sanitisation côté serveur (DOMPurify), CSP `default-src 'self'` |
+| **R**epudiation | Suppression de post non auditée | `DELETE /api/posts/[postId]` (`route.ts:14-42`) sans audit log | Timestamp `updatedAt` (`schema.prisma:80`) | Table `AuditLog (userId, action, resourceId, ip, ua, ts)` |
+| **I**nfo Disclosure | Énumération d'utilisateurs via timing magic link | `lib/auth.ts:32-43` choisit un template Postmark différent selon `emailVerified` → temps de réponse différent | Validation Zod du format | Latence unifiée + message UI neutre |
+| **D**oS | Saturation des routes API non protégées | `middleware.ts:45` matche seulement `/dashboard`, `/editor`, `/login`, `/register` — `/api/*` **hors périmètre** | Auth requise sur la plupart des routes | Rate limiting (Upstash, `@vercel/rate-limit`), quota IP + userId, timeout `/api/og` |
+| **E**oP | Bypass quota freemium via TOCTOU | `app/api/posts/route.ts:54-63` : `db.post.count` puis `db.post.create` non transactionnel → 2 requêtes concurrentes = 4 posts | Vérification applicative + plan via Stripe | `db.$transaction` avec `count` + `create` atomiques, ou contrainte DB |
+
+**Top 3 priorités F1** : (1) rate limiting global sur `/api/*`, (2) sanitisation du contenu des posts, (3) headers CSP + cookies durcis.
+
+#### Frontière 2 — Serveur Next.js ↔ Base de données
+
+Toutes les requêtes DB transitent par le singleton Prisma (`lib/db.ts:7-15`). Isole la logique applicative du stockage : `accounts`, `sessions`, `users`, `posts`, et colonnes Stripe dénormalisées.
+
+| STRIDE | Menace | Vecteur / fichier | Mitigation actuelle | À faire |
+|---|---|---|---|---|
+| **S**poofing | `DATABASE_URL` exposé en clair | Leak via log, `.env` commité, dump Vercel = accès total | `env.mjs:13` valide la présence, `.gitignore` exclut `.env*` | Rotation, secret manager, rôle Postgres lecture seule pour tâches annexes |
+| **T**ampering | Régression silencieuse sur `isPro` | `lib/subscription.ts:1` : `// @ts-nocheck` désactive TypeScript ; calcul `isPro` peut renvoyer `undefined` au lieu de `false` | Test e2e Playwright sur le flux | Retirer `@ts-nocheck`, aligner les types `UserSubscriptionPlan` |
+| **R**epudiation | Aucune trace des updates `users.stripe*` | Webhook fait `db.user.update` (`webhooks/stripe/route.ts:35-47, 57-67`) sans journal | Contraintes d'unicité (`stripeCustomerId @unique`) | Table `SubscriptionEvent` append-only miroir des events Stripe (utile aussi pour idempotence) |
+| **I**nfo Disclosure | Élargissement des champs renvoyés | Plusieurs routes ont un `select` explicite (bon), pas toutes | `select` explicite sur `GET /api/posts` | Linter ou code review qui exige `select` partout |
+| **D**oS | Amplification DB via callback JWT | `lib/auth.ts:83-103` : `db.user.findFirst` à **chaque** requête authentifiée | Pool Prisma par défaut | Cache (Redis/LRU) ou claims dans le JWT au login |
+| **E**oP | Bypass d'ownership si `authorId === undefined` | `app/api/posts/[postId]/route.ts:83-93` count où `authorId = session.user.id` ; si `session?.user.id === undefined` la garde tombe | Vérification ownership explicite | Garde `if (!session?.user?.id) return 401`, `authorId` non-nullable au schéma |
+
+**Top 3 priorités F2** : (1) retirer `@ts-nocheck` de `lib/subscription.ts`, (2) mémoïser le lookup JWT, (3) journal d'audit `SubscriptionEvent`.
+
+#### Frontière 3 — Serveur Next.js ↔ Services externes
+
+Trois intégrations : **GitHub OAuth** (provider NextAuth), **Stripe** (checkout sortant + webhook entrant), **Postmark** (magic link + activation). Secrets dans `env.mjs:11-20`.
+
+| STRIDE | Menace | Vecteur / fichier | Mitigation actuelle | À faire |
+|---|---|---|---|---|
+| **S**poofing | Faux webhook Stripe / replay | Forge de payload sur `/api/webhooks/stripe` | `stripe.webhooks.constructEvent` (`webhooks/stripe/route.ts:14-22`) vérifie la signature HMAC | Idempotence : stocker les `event.id` reçus pour rejeter les doublons |
+| **T**ampering | Manipulation de `metadata.userId` au checkout | `webhooks/stripe/route.ts:37` met à jour le user via `metadata.userId` sans recroiser `stripeCustomerId` | `metadata` posée serveur-side au moment du checkout | Croiser : `where: { id: metadata.userId, stripeCustomerId: subscription.customer }` |
+| **R**epudiation | Aucune trace des events Stripe traités | `route.ts:26-68` n'effectue que l'effet de bord | Logs Vercel éphémères | Table `StripeWebhookEvent(id, type, payload, received_at, processed_at)` |
+| **I**nfo Disclosure | OAuth tokens GitHub stockés en clair | `schema.prisma:19-24` : `access_token`, `refresh_token`, `id_token` en clair | Scope minimal, `GITHUB_ACCESS_TOKEN` serveur séparé | Chiffrement applicatif des colonnes `*_token`, ou rotation |
+| **D**oS | Épuisement quota Postmark / facture Stripe | `users/stripe/route.ts:35-51` crée une `checkout.session` sans rate limit ; même chose pour magic link (`auth.ts:48`) | Auth requise | Rate limit par userId (5/h sur Stripe, 3/h sur magic link) |
+| **E**oP | Compte takeover via host header injection | `NEXTAUTH_URL` est `optional` (`env.mjs:8`) → en prod, NextAuth peut générer le magic link sur le mauvais domaine | Validation Zod du format | Rendre `NEXTAUTH_URL` obligatoire en prod, durée de vie courte du `VerificationToken` |
+
+**Top 3 priorités F3** : (1) idempotence + double-check user sur le webhook Stripe, (2) rate limit sur `/api/users/stripe` et magic link, (3) `NEXTAUTH_URL` obligatoire en prod.
+
+#### Synthèse STRIDE
+
+Deux menaces se retrouvent sur plusieurs frontières et devraient être traitées en priorité au niveau application :
+
+1. **Absence totale de rate limiting** (`middleware.ts:45` ne couvre pas `/api`) — impact DoS sur F1, amplification DB sur F2, coût tiers sur F3.
+2. **Absence d'audit log** — répudiation possible sur les trois frontières (posts, users, subscriptions).
+
+Les autres correctifs sont locaux et identifiés par fichier/ligne ci-dessus.
+
+### Étape 2 — Analyse Semgrep
+
+Le scan utilise un **ruleset custom** (`semgrep.yml` à la racine) qui cible exactement les classes de menaces identifiées par STRIDE plutôt que l'ensemble générique des règles publiques. Reproduction : `./scripts/run-semgrep.sh`.
+
+Choix pédagogique : le registre public Semgrep nécessite un compte gratuit pour télécharger `p/owasp-top-ten` et consorts. Les règles custom sont rejouables hors-ligne et chaque match correspond 1:1 à un ticket Jira, ce qui rend la chaîne traçable.
+
+| Sévérité | Règle Semgrep | Fichier:ligne | STRIDE | Ticket | Assigné |
+|---|---|---|---|---|---|
+| **CRITICAL** | `tma-validation-uses-z-any` | `lib/validations/post.ts:7` | Tampering · CWE-79 | [KAN-25](https://m4xxime.atlassian.net/browse/KAN-25) | MM |
+| **MAJOR** | `tma-ts-nocheck-disables-types` | `lib/subscription.ts:1` | Tampering + EoP · CWE-1287 | [KAN-26](https://m4xxime.atlassian.net/browse/KAN-26) | MB |
+| **MAJOR** | `tma-ts-nocheck-disables-types` | `lib/toc.ts:1` | Tampering · CWE-1287 | [KAN-27](https://m4xxime.atlassian.net/browse/KAN-27) | MB |
+| **MAJOR** | `tma-no-rate-limit-on-api-routes` | `middleware.ts:45` | DoS · CWE-770 | [KAN-28](https://m4xxime.atlassian.net/browse/KAN-28) | GL |
+| **MINOR** | `tma-jwt-callback-hits-db-on-every-request` | `lib/auth.ts:84` | DoS · CWE-400 | [KAN-29](https://m4xxime.atlassian.net/browse/KAN-29) | GL |
+
+**Priorisation** (selon le PDF Atelier 4, "injection SQL > code mort") : KAN-25 (XSS stocké) > KAN-28 (DoS, coût tiers) > KAN-26/27 (tampering / type safety) > KAN-29 (perf).
+
+### Étape 3 — Consolidation
+
+Les fixes correspondant aux findings Semgrep critiques sont commités avec la convention `fix(KAN-X):`. La suite Playwright (Atelier 3) est ré-exécutée après chaque fix pour garantir la non-régression. Statut courant : tickets en attente de prise en charge — voir le board Jira.
+
+---
+
 ## Running Locally (upstream)
 
 ```sh
